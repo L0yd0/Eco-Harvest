@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intro Story - Eco Harvest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #020817;
+            color: white;
+            overflow-x: hidden;
+        }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+
+        .main-bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: radial-gradient(ellipse at top, rgba(29, 78, 216, 0.15), transparent 60%),
+                        radial-gradient(ellipse at bottom, rgba(5, 150, 105, 0.15), transparent 60%),
+                        #020817;
+            z-index: 0;
+        }
+        .stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        .star {
+            position: absolute; background: white; border-radius: 50%;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+        @keyframes twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; } }
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-glow {
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+            transition: all 0.3s ease;
+        }
+        .btn-glow:hover {
+            box-shadow: 0 0 50px rgba(16, 185, 129, 0.7);
+            transform: scale(1.05);
+        }
+        .text-gradient {
+            background: linear-gradient(135deg, #3b82f6, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .story-text {
+            animation: fadeIn 2s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-bg"></div>
+    <div class="stars" id="stars"></div>
+
+    <main class="relative z-10 min-h-screen flex items-center justify-center px-6">
+        <div class="max-w-4xl w-full glass rounded-2xl p-8 text-center">
+            <h1 class="orbitron text-5xl font-extrabold text-gradient mb-8">🌱 Eco Harvest</h1>
+
+            <div class="story-text space-y-6 text-lg leading-relaxed">
+                <p>In 2045, climate change threatens global food security. NASA uses satellite technology to help farmers adapt.</p>
+
+                <p>As an <strong>Eco Harvest Farmer</strong>, you'll use real satellite data, NDVI monitoring, and weather forecasts to manage sustainable farms.</p>
+
+                <p>Learn how space technology can revolutionize agriculture and ensure a sustainable future for our planet.</p>
+            </div>
+
+            <div class="mt-8 flex gap-4 justify-center">
+                <button onclick="window.location.href='personaje.html'"
+                    class="px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl font-bold btn-glow">
+                    Start Game 🚀
+                </button>
+                <button onclick="window.location.href='index.html'"
+                    class="px-8 py-4 glass rounded-xl font-bold hover:bg-white/10 transition">
+                    Back to Menu
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Create stars
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 150; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() * 2 + 1;
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            starsContainer.appendChild(star);
+        }
+    </script>
+</body>
+</html>

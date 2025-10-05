@@ -1,0 +1,2219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eco Harvest - Game</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0a;
+      color: #f8f9fa;
+      overflow-x: hidden;
+      line-height: 1.6;
+      perspective: 1000px;
+    }
+    .orbitron { font-family: 'Orbitron', sans-serif; }
+
+    /* Animaciones de entrada */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px) rotateX(15deg) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) rotateX(0deg) scale(1);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+      50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.6); }
+    }
+
+    .animate-fade-in-up {
+      animation: fadeInUp 0.8s ease-out forwards;
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.6s ease-out forwards;
+    }
+
+    .animate-pulse-slow {
+      animation: pulse 2s infinite;
+    }
+
+    .animate-3d-float {
+      animation: float3D 3s ease-in-out infinite;
+    }
+
+    @keyframes float3D {
+      0%, 100% { transform: translateY(0) rotateY(0deg); }
+      50% { transform: translateY(-5px) rotateY(5deg); }
+    }
+
+    @keyframes rotate3D {
+      0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+      25% { transform: rotateX(90deg) rotateY(90deg) rotateZ(0deg); }
+      50% { transform: rotateX(180deg) rotateY(180deg) rotateZ(90deg); }
+      75% { transform: rotateX(270deg) rotateY(270deg) rotateZ(180deg); }
+      100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
+    }
+
+    @keyframes morph {
+      0%, 100% { border-radius: 16px; transform: scale(1); }
+      50% { border-radius: 50%; transform: scale(1.1); }
+    }
+
+    @keyframes hologram {
+      0%, 100% { opacity: 0.8; filter: hue-rotate(0deg) brightness(1); }
+      50% { opacity: 1; filter: hue-rotate(180deg) brightness(1.2); }
+    }
+
+    .animate-rotate-3d {
+      animation: rotate3D 8s linear infinite;
+    }
+
+    .animate-morph {
+      animation: morph 4s ease-in-out infinite;
+    }
+
+    .animate-hologram {
+      animation: hologram 3s ease-in-out infinite;
+      will-change: filter, opacity;
+    }
+
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-10px); }
+      60% { transform: translateY(-5px); }
+    }
+
+    @keyframes slideInLeft {
+      from { transform: translateX(-100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes rainbow {
+      0% { filter: hue-rotate(0deg); }
+      100% { filter: hue-rotate(360deg); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+      20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+
+    @keyframes fadeInScale {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .animate-bounce {
+      animation: bounce 0.6s ease-in-out;
+    }
+
+    .animate-slide-in-left {
+      animation: slideInLeft 0.8s ease-out forwards;
+    }
+
+    .animate-rainbow {
+      animation: rainbow 5s linear infinite;
+    }
+
+    .animate-shake {
+      animation: shake 0.5s ease-in-out;
+    }
+
+    .animate-fade-in-scale {
+      animation: fadeInScale 0.5s ease-out forwards;
+    }
+
+    @keyframes lightSweep {
+      0%, 100% { transform: translateX(-100%) skewX(-20deg); }
+      50% { transform: translateX(100%) skewX(-20deg); }
+    }
+
+    /* Optimización de rendimiento */
+    .glass, .card-hover, .btn-glow, .action-btn, section {
+      will-change: transform;
+    }
+
+    /* Confetti */
+    .confetti {
+      position: fixed;
+      top: -10px;
+      width: 10px;
+      height: 10px;
+      animation: fall 3s linear forwards;
+      z-index: 1000;
+    }
+
+    @keyframes fall {
+      to {
+        transform: translateY(100vh) rotate(720deg);
+      }
+    }
+
+    .main-bg {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: radial-gradient(ellipse at top, rgba(59,130,246,0.08), transparent 60%),
+                  radial-gradient(ellipse at bottom, rgba(16,185,129,0.08), transparent 60%),
+                  linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0f0f0f 100%);
+      z-index: 0;
+      transform: translateZ(-50px) scale(1.1);
+      filter: blur(1px);
+    }
+
+    .glass {
+      background: rgba(20, 20, 20, 0.85);
+      backdrop-filter: blur(25px);
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow:
+        0 12px 40px rgba(0,0,0,0.4),
+        0 4px 20px rgba(59, 130, 246, 0.1),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+      border-radius: 16px;
+      transform-style: preserve-3d;
+    }
+
+    .btn-glow {
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.25);
+      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      border-radius: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-ripple {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-ripple::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .btn-ripple:active::after {
+      width: 300px;
+      height: 300px;
+    }
+    .btn-glow::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    .btn-glow:hover::before {
+      left: 100%;
+    }
+    .btn-glow:hover {
+      box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);
+      transform: translateY(-3px) scale(1.03);
+    }
+    .btn-glow:active {
+      transform: translateY(-1px) scale(1.01);
+    }
+
+    .card-hover {
+      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      border-radius: 16px;
+      transform-style: preserve-3d;
+    }
+    .card-hover:hover {
+      transform: translateY(-8px) scale(1.03) rotateX(5deg) rotateY(2deg);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1);
+    }
+
+    .text-gradient {
+      background: linear-gradient(135deg, #60a5fa, #34d399, #fbbf24);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Micro-interacciones */
+    .resource-card {
+      transition: all 0.3s ease;
+    }
+    .resource-card:hover .text-2xl {
+      animation: pulse 0.6s ease-in-out;
+    }
+
+    /* Estilos para secciones */
+    section {
+      margin-bottom: 2rem;
+      transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    section:hover {
+      transform: translateZ(20px) rotateX(2deg) scale(1.01);
+      box-shadow:
+        0 20px 60px rgba(0,0,0,0.5),
+        0 8px 30px rgba(59, 130, 246, 0.15);
+    }
+
+    /* Mejorar botones de acción */
+    .action-btn {
+      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      position: relative;
+      transform-style: preserve-3d;
+    }
+    .action-btn:hover {
+      transform: translateY(-4px) rotateX(10deg) scale(1.05);
+    }
+
+    /* Animaciones para números */
+    @keyframes numberPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); color: #34d399; }
+    }
+
+    .number-change {
+      animation: numberPulse 0.5s ease-in-out;
+    }
+
+    /* Progress bars */
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #34d399, #10b981);
+      transition: width 0.5s ease;
+    }
+
+    .progress-fill.energy {
+      background: linear-gradient(90deg, #fbbf24, #f59e0b);
+    }
+
+    /* Enhanced tooltips */
+    .tooltip {
+      position: relative;
+    }
+
+    .tooltip::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.9);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+      z-index: 1000;
+    }
+
+    .tooltip:hover::after {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Interactive button states */
+    .btn-interactive {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-interactive::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn-interactive:hover::before {
+      left: 100%;
+    }
+
+    /* Loading spinner */
+    .spinner {
+      border: 2px solid rgba(255,255,255,0.1);
+      border-top: 2px solid #60a5fa;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-bg"></div>
+
+  <!-- HEADER -->
+  <header class="glass fixed top-0 left-0 right-0 z-50 animate-fade-in shadow-2xl" style="transform-style: preserve-3d; position: relative; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.1);">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center" style="transform: translateZ(10px); position: relative; z-index: 2;">
+      <h1 class="orbitron text-2xl font-bold text-gradient animate-hologram animate-rainbow" style="text-shadow: 0 2px 10px rgba(59, 130, 246, 0.5);">🌱 ECO HARVEST</h1>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div class="glass px-3 py-2 rounded-lg text-center card-hover">
+          <div class="text-xl mb-1">🗓️</div>
+          <div class="text-xs text-gray-400">Day</div>
+          <div id="dia" class="font-bold text-cyan-400">1</div>
+          <div id="clock" class="text-xs text-gray-300 mt-1">12:00 AM</div>
+        </div>
+        <div class="glass px-3 py-2 rounded-lg text-center card-hover">
+          <div class="text-xl mb-1">🏆</div>
+          <div class="text-xs text-gray-400">Points</div>
+          <div id="puntuacion" class="font-bold text-yellow-400">0</div>
+        </div>
+        <div class="glass px-3 py-2 rounded-lg text-center card-hover cursor-pointer" onclick="document.getElementById('modalInventory').classList.remove('hidden')">
+          <div class="text-xl mb-1">🌾</div>
+          <div class="text-xs text-gray-400">Agriculture</div>
+          <div id="sostenibilidad" class="font-bold text-green-400">0</div>
+          <div class="progress-bar mt-1"><div class="progress-fill" id="sostenibilidad-bar" style="width: 0%"></div></div>
+        </div>
+        <div class="glass px-3 py-2 rounded-lg text-center card-hover cursor-pointer" onclick="document.getElementById('modalAchievements').classList.remove('hidden')">
+          <div class="text-xl mb-1">🏅</div>
+          <div class="text-xs text-gray-400">Achievements</div>
+          <div id="achievementsCount" class="font-bold text-purple-400">0/5</div>
+        </div>
+        <div id="playerInfo" class="glass px-3 py-2 rounded-lg text-center text-gray-300"></div>
+      </div>
+      <div class="flex gap-2 ml-4">
+        <button id="btnSaveGame" class="px-4 py-2 glass rounded-lg hover:bg-white/10 transition text-sm font-medium btn-glow tooltip" title="Save your current game progress">💾 Save</button>
+        <button id="btnNASAInfo" class="px-4 py-2 glass rounded-lg hover:bg-white/10 transition text-sm font-medium btn-glow tooltip" title="Learn about NASA technologies used in this game">🛰️ NASA</button>
+        <button id="btnManual" class="px-4 py-2 glass rounded-lg hover:bg-white/10 transition text-sm font-medium btn-glow tooltip" title="View game manual and tutorials">📖 Help</button>
+      </div>
+    </div>
+    <!-- Efecto de luz tecnológica -->
+    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse opacity-30" style="transform: skewX(-20deg); animation: lightSweep 4s ease-in-out infinite;"></div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="relative z-10 pt-24 px-6">
+    <div class="max-w-6xl mx-auto">
+
+      <!-- NASA Data Dashboard -->
+      <section class="glass p-6 rounded-2xl mb-8 animate-fade-in-up">
+        <h3 class="orbitron text-xl font-bold mb-4 text-center">🛰️ NASA Agricultural Data Dashboard</h3>
+        <p class="text-center text-gray-400 text-sm mb-6">Real-time data from NASA satellites helps you make informed farming decisions</p>
+      </section>
+
+      <!-- Panel de recursos -->
+      <section class="grid grid-cols-2 md:grid-cols-5 gap-6 mb-12 animate-fade-in-up">
+        <div class="glass p-6 rounded-2xl text-center card-hover resource-card animate-morph shadow-lg hover:shadow-xl transition-all duration-300 tooltip" title="Real-time weather data from NASA climate monitoring satellites. Temperature affects crop growth and water needs.">
+          <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-3">
+            <span class="text-xl">🌡️</span>
+          </div>
+          <p class="text-sm text-gray-400 font-medium">Weather</p>
+          <p class="text-xs text-gray-500 mb-1">(NASA Climate Data)</p>
+          <h2 id="weather" class="text-3xl font-bold text-blue-400 mt-2">-- °C</h2>
+        </div>
+        <div class="glass p-6 rounded-2xl text-center card-hover resource-card shadow-lg hover:shadow-xl transition-all duration-300 tooltip" title="Water resources critical for sustainable agriculture. Monitor soil moisture levels using satellite data.">
+          <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-3">
+            <span class="text-xl">💧</span>
+          </div>
+          <p class="text-sm text-gray-400 font-medium">Water</p>
+          <p class="text-xs text-gray-500 mb-1">(Soil Moisture)</p>
+          <h2 id="agua" class="text-3xl font-bold text-emerald-400 mt-2">50%</h2>
+          <div class="progress-bar mt-3"><div class="progress-fill" id="agua-bar" style="width: 50%"></div></div>
+        </div>
+        <div class="glass p-6 rounded-2xl text-center card-hover resource-card shadow-lg hover:shadow-xl transition-all duration-300 tooltip" title="Renewable energy for efficient farm operations. Solar and wind power monitored via satellite.">
+          <div class="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-3">
+            <span class="text-xl">⚡</span>
+          </div>
+          <p class="text-sm text-gray-400 font-medium">Energy</p>
+          <p class="text-xs text-gray-500 mb-1">(Renewable Sources)</p>
+          <h2 id="energia" class="text-3xl font-bold text-yellow-400 mt-2">50%</h2>
+          <div class="progress-bar mt-3"><div class="progress-fill energy" id="energia-bar" style="width: 50%"></div></div>
+        </div>
+        <div class="glass p-6 rounded-2xl text-center card-hover resource-card shadow-lg hover:shadow-xl transition-all duration-300 tooltip" title="Normalized Difference Vegetation Index - NASA technology for monitoring crop health and growth from space.">
+          <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-lime-500 rounded-full flex items-center justify-center mx-auto mb-3">
+            <span class="text-xl">🌿</span>
+          </div>
+          <p class="text-sm text-gray-400 font-medium">NDVI</p>
+          <p class="text-xs text-gray-500 mb-1">(Crop Health)</p>
+          <h2 id="ndvi" class="text-3xl font-bold text-green-400 mt-2">--</h2>
+        </div>
+        <div class="glass p-6 rounded-2xl text-center card-hover resource-card shadow-lg hover:shadow-xl transition-all duration-300 tooltip" title="Current crop status monitored using satellite imagery and vegetation analysis.">
+          <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-3">
+            <span class="text-xl">🌾</span>
+          </div>
+          <p class="text-sm text-gray-400 font-medium">Agriculture Status</p>
+          <p class="text-xs text-gray-500 mb-1">(Satellite View)</p>
+          <h2 id="cultivo" class="text-2xl font-bold text-purple-400 mt-2">Not planted</h2>
+          <p id="diasCrecimiento" class="text-sm text-gray-300 mt-1">Days remaining: --</p>
+        </div>
+      </section>
+
+      <!-- Inventario -->
+      <section class="glass p-6 rounded-2xl mb-10 animate-slide-in-left">
+        <h3 class="orbitron text-xl font-bold mb-4">Harvest Inventory</h3>
+        <div id="inventario" class="grid grid-cols-3 gap-4">
+          <!-- Se llenará dinámicamente -->
+        </div>
+        <button id="btnVenderTodo" class="mt-4 px-4 py-2 bg-green-600 rounded-lg btn-glow text-sm">💰 Sell All (+50% points)</button>
+      </section>
+
+      <!-- Misiones Diarias -->
+      <section class="glass p-6 rounded-2xl mb-10 animate-fade-in-up">
+        <h3 class="orbitron text-xl font-bold mb-4">Daily Missions</h3>
+        <div id="misiones" class="space-y-2">
+          <!-- Se llenará dinámicamente -->
+        </div>
+      </section>
+
+      <!-- Log de Eventos -->
+      <section class="glass p-6 rounded-2xl mb-10 animate-fade-in-up">
+        <h3 class="orbitron text-xl font-bold mb-4">📜 Event Log</h3>
+        <div id="eventLog" class="space-y-2 max-h-32 overflow-y-auto text-sm">
+          <!-- Se llenará dinámicamente -->
+        </div>
+      </section>
+
+
+      <!-- Selector de cultivos -->
+      <section class="glass p-6 rounded-2xl mb-10 animate-fade-in-up">
+        <h3 class="orbitron text-xl font-bold mb-4">Select Your Crop</h3>
+        <div id="cropGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="glass p-4 rounded-lg cursor-pointer card-hover" onclick="seleccionarCultivo('maiz')">
+            <div class="text-center">
+              <div class="text-2xl mb-2">🌽</div>
+              <h4 class="font-bold">Corn</h4>
+              <p class="text-sm text-gray-400">Energy: 15 | Water: 15 | Days: 3 | Points: 80</p>
+            </div>
+          </div>
+          <div class="glass p-4 rounded-lg cursor-pointer card-hover" onclick="seleccionarCultivo('trigo')">
+            <div class="text-center">
+              <div class="text-2xl mb-2">🌾</div>
+              <h4 class="font-bold">Wheat</h4>
+              <p class="text-sm text-gray-400">Energy: 10 | Water: 20 | Days: 2 | Points: 60</p>
+            </div>
+          </div>
+          <div class="glass p-4 rounded-lg cursor-pointer card-hover" onclick="seleccionarCultivo('tomates')">
+            <div class="text-center">
+              <div class="text-2xl mb-2">🍅</div>
+              <h4 class="font-bold">Tomatoes</h4>
+              <p class="text-sm text-gray-400">Energy: 20 | Water: 25 | Days: 4 | Points: 120</p>
+            </div>
+          </div>
+        </div>
+        <p id="cultivoSeleccionado" class="text-center mt-4 text-gray-300">No crop selected</p>
+      </section>
+
+      <!-- Vista de la granja -->
+      <section class="glass p-8 rounded-2xl mb-10 text-center animate-fade-in-up">
+        <h2 class="orbitron text-2xl font-bold mb-4">Farm View</h2>
+        <p class="text-gray-400 text-sm mb-4">
+          Observe your agricultural land and crop status.
+        </p>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <h3 class="text-lg font-bold mb-2">Satellite Map</h3>
+            <div id="mapa" class="glass rounded-xl h-48" style="min-height: 192px;"></div>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold mb-2">Current Agriculture</h3>
+            <div id="cultivoVisual" class="glass rounded-xl h-48 flex items-start justify-start p-4 card-hover animate-3d-float">
+              <img src="../Images for game/crop plot.png" class="w-24 h-24 object-cover" alt="Crop Plot" onerror="this.src='../Images for game/crop plot.webp'">
+              <!-- Space for additional crop plots to be added via upgrades -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quick Tips -->
+      <section class="glass p-4 rounded-2xl mb-6 animate-fade-in-up">
+        <h4 class="font-bold mb-2">💡 Quick Tips</h4>
+        <p class="text-sm text-gray-400">Check weather before planting • Monitor NDVI for crop health • Balance resources for sustainability • Complete missions for bonuses</p>
+      </section>
+
+      <!-- Botones de acción -->
+      <section class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 justify-center mb-10 animate-fade-in-up">
+        <button id="btnClima" class="px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl font-bold btn-glow action-btn btn-ripple btn-interactive text-xs shadow-lg hover:shadow-xl transition-all duration-300 tooltip" title="Get real-time weather data from NASA climate satellites. Essential for planning irrigation and planting.">
+          🌤️ Weather
+        </button>
+        <button id="btnAnalizar" class="px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl font-bold btn-glow action-btn btn-ripple text-xs shadow-lg hover:shadow-xl transition-all duration-300 tooltip" title="Analyze your field using satellite imagery and NDVI data. Discover crop health and potential issues.">
+          🔍 Analyze
+        </button>
+        <button id="btnPlantar" class="px-6 py-4 bg-gradient-to-r from-green-500 to-lime-600 rounded-xl font-bold btn-glow action-btn btn-ripple text-xs shadow-lg hover:shadow-xl transition-all duration-300 tooltip" title="Plant your selected crop. Requires energy and affects soil health. Choose wisely based on weather!">
+          🌱 Plant
+        </button>
+        <button id="btnRegar" class="px-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl font-bold btn-glow action-btn btn-ripple text-xs shadow-lg hover:shadow-xl transition-all duration-300 tooltip" title="Irrigate your crops. Uses water resources but promotes healthy growth. Monitor sustainability impact.">
+          💧 Water
+        </button>
+        <button id="btnCosechar" class="px-6 py-4 bg-gradient-to-r from-orange-500 to-red-600 rounded-xl font-bold btn-glow action-btn btn-ripple text-xs shadow-lg hover:shadow-xl transition-all duration-300 tooltip" title="Harvest mature crops. Earn points and add to inventory. Timing affects yield quality.">
+          🌾 Harvest
+        </button>
+        <button id="btnTienda" class="px-6 py-4 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-xl font-bold btn-glow action-btn btn-ripple text-xs shadow-lg hover:shadow-xl transition-all duration-300 tooltip" title="Visit the upgrade shop. Spend points on bonuses like extra energy or faster growth.">
+          🛒 Shop
+        </button>
+        <button id="btnPasarDia" class="px-6 py-4 bg-gradient-to-r from-purple-500 to-violet-600 rounded-xl font-bold btn-glow action-btn btn-ripple text-xs shadow-lg hover:shadow-xl transition-all duration-300 tooltip" title="Advance to the next day. Resources regenerate, crops grow, and random events may occur.">
+          ⏭️ Next Day
+        </button>
+        <button id="btnManual" class="px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl font-bold btn-glow action-btn btn-ripple text-xs shadow-lg hover:shadow-xl transition-all duration-300 tooltip" title="View detailed game manual and learn about NASA agricultural technologies.">
+          📖 Help
+        </button>
+      </section>
+
+      <!-- Modal de Tutorial -->
+      <div id="modalTutorial" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-fade-in hidden">
+        <div class="glass rounded-2xl p-8 max-w-4xl w-full mx-4 animate-fade-in-up max-h-[80vh] overflow-y-auto">
+          <h3 class="orbitron text-3xl font-bold mb-6 text-center text-gradient">🌱 Welcome to Eco Harvest</h3>
+          <div class="space-y-4 text-sm">
+            <div class="glass p-4 rounded-lg">
+              <h4 class="font-bold mb-2">🎯 Your Mission</h4>
+              <p>Use real NASA satellite data to manage a sustainable farm. Learn how space technology helps farmers worldwide make better decisions for food security and environmental protection.</p>
+            </div>
+            <div class="glass p-4 rounded-lg">
+              <h4 class="font-bold mb-2">🌱 Getting Started</h4>
+              <ul class="list-disc list-inside space-y-1">
+                <li><strong>Resources:</strong> Monitor water, energy, and weather from NASA data</li>
+                <li><strong>Agriculture:</strong> Select and plant crops that require different resources</li>
+                <li><strong>NDVI:</strong> Use vegetation health data to optimize farming</li>
+                <li><strong>Map:</strong> Explore satellite imagery and analyze areas</li>
+                <li><strong>Missions:</strong> Complete daily goals to earn points</li>
+              </ul>
+            </div>
+            <div class="glass p-4 rounded-lg">
+              <h4 class="font-bold mb-2">🛰️ NASA Data in Action</h4>
+              <p>This game uses real NASA technologies: satellite imagery for maps, NDVI for crop health monitoring, and weather APIs for climate data. See how space helps agriculture!</p>
+            </div>
+            <div class="glass p-4 rounded-lg">
+              <h4 class="font-bold mb-2">💡 Tips</h4>
+              <ul class="list-disc list-inside space-y-1">
+                <li>Check weather before planting to avoid crop damage</li>
+                <li>Monitor NDVI to see how your crops are doing</li>
+                <li>Balance resources to maintain sustainability</li>
+                <li>Complete missions for bonus rewards</li>
+              </ul>
+            </div>
+          </div>
+          <div class="text-center mt-6">
+            <button id="btnCerrarTutorial" class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl font-bold btn-glow">Start Farming! 🌱</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Manual -->
+      <div id="modalManual" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-fade-in hidden">
+        <div class="glass rounded-2xl p-8 max-w-5xl w-full mx-4 animate-fade-in-up max-h-[90vh] overflow-y-auto">
+          <h3 class="orbitron text-3xl font-bold mb-6 text-center text-gradient">📖 Game Manual - Eco Harvest</h3>
+          <div class="space-y-6 text-sm">
+            <div class="glass p-4 rounded-lg">
+              <h2 class="font-bold mb-3 text-lg">Game Concept</h2>
+              <p>Eco Harvest is a resource management and sustainability simulator where you manage a self-sufficient agricultural ecosystem in a future affected by climate change. Your goal is to keep 'Agriculture' high, optimize water and energy resources, and complete missions to achieve the maximum 'Score'.</p>
+            </div>
+
+            <div class="glass p-4 rounded-lg">
+              <h2 class="font-bold mb-3 text-lg">Resources and Statistics</h2>
+              <ul class="list-disc list-inside space-y-2">
+                <li><strong>Water (💧):</strong> Essential for watering crops. Regenerates daily, but can be affected by droughts.</li>
+                <li><strong>Energy (⚡):</strong> Needed for planting and other actions. Increases with bonuses and daily regeneration.</li>
+                <li><strong>Sustainability:</strong> Global index that measures the health of the agricultural ecosystem.</li>
+                <li><strong>Score:</strong> Points accumulated from harvests and completed missions.</li>
+              </ul>
+            </div>
+
+            <div class="glass p-4 rounded-lg">
+              <h2 class="font-bold mb-3 text-lg">Main Actions</h2>
+              <ul class="list-disc list-inside space-y-2">
+                <li><strong>Plant:</strong> Select a crop and plant it using energy.</li>
+                <li><strong>Water:</strong> Water the crop to promote growth.</li>
+                <li><strong>Harvest:</strong> Collect the ready crop and earn points.</li>
+                <li><strong>Next Day:</strong> Advance to the next day, regenerate resources and face events.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="text-center mt-6">
+            <button id="btnCerrarManual" class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl font-bold btn-glow">Close Manual</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Tienda -->
+      <div id="modalTienda" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center animate-fade-in">
+        <div class="glass rounded-2xl p-8 max-w-2xl w-full mx-4 animate-fade-in-up">
+          <h3 class="orbitron text-2xl font-bold mb-6 text-center">Upgrade Shop</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div class="glass p-4 rounded-lg card-hover">
+              <h4 class="font-bold mb-2">⚡ Extra Energy</h4>
+              <p class="text-sm text-gray-400 mb-2">+5 energy per day</p>
+              <p class="text-yellow-400 font-bold">Cost: 200 points</p>
+              <button id="btnComprarEnergia" class="mt-2 px-3 py-1 bg-green-600 rounded btn-glow text-sm">Comprar</button>
+            </div>
+            <div class="glass p-4 rounded-lg card-hover">
+              <h4 class="font-bold mb-2">💰 Point Bonus</h4>
+              <p class="text-sm text-gray-400 mb-2">+10% points on harvests</p>
+              <p class="text-yellow-400 font-bold">Cost: 300 points</p>
+              <button id="btnComprarPuntos" class="mt-2 px-3 py-1 bg-green-600 rounded btn-glow text-sm">Comprar</button>
+            </div>
+            <div class="glass p-4 rounded-lg card-hover">
+              <h4 class="font-bold mb-2">💧 Extra Water</h4>
+              <p class="text-sm text-gray-400 mb-2">+20% maximum capacity</p>
+              <p class="text-yellow-400 font-bold">Cost: 150 points</p>
+              <button id="btnComprarAgua" class="mt-2 px-3 py-1 bg-green-600 rounded btn-glow text-sm">Comprar</button>
+            </div>
+            <div class="glass p-4 rounded-lg card-hover">
+              <h4 class="font-bold mb-2">🌱 Fast Growth</h4>
+              <p class="text-sm text-gray-400 mb-2">-1 day of growth</p>
+              <p class="text-yellow-400 font-bold">Cost: 250 points</p>
+              <button id="btnComprarCrecimiento" class="mt-2 px-3 py-1 bg-green-600 rounded btn-glow text-sm">Comprar</button>
+            </div>
+          </div>
+          <div class="text-center">
+            <button id="btnCerrarTienda" class="px-6 py-2 glass rounded-lg btn-glow text-sm">❌ Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Inventory -->
+      <div id="modalInventory" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-fade-in hidden">
+        <div class="glass rounded-2xl p-8 max-w-2xl w-full mx-4 animate-fade-in-up">
+          <h3 class="orbitron text-2xl font-bold mb-6 text-center">Agriculture Inventory</h3>
+          <div class="flex justify-center mb-4">
+            <button id="btnInventoryCrops" class="px-4 py-2 glass rounded-lg btn-glow active">Crops</button>
+            <button id="btnInventorySeeds" class="px-4 py-2 glass rounded-lg btn-glow">Seeds</button>
+          </div>
+          <div id="modalInventoryContent" class="grid grid-cols-3 gap-4">
+            <!-- Will be filled dynamically -->
+          </div>
+          <div class="text-center mt-6">
+            <button onclick="document.getElementById('modalInventory').classList.add('hidden')" class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl font-bold btn-glow">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Achievements -->
+      <div id="modalAchievements" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-fade-in hidden">
+        <div class="glass rounded-2xl p-8 max-w-4xl w-full mx-4 animate-fade-in-up">
+          <h3 class="orbitron text-2xl font-bold mb-6 text-center">Achievements</h3>
+          <div id="modalAchievementsContent" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <!-- Will be filled dynamically -->
+          </div>
+          <div class="text-center mt-6">
+            <button onclick="document.getElementById('modalAchievements').classList.add('hidden')" class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl font-bold btn-glow">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Reporte Nocturno -->
+      <div id="modalReporte" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-fade-in hidden">
+        <div class="glass rounded-2xl p-8 max-w-4xl w-full mx-4 animate-fade-in-up max-h-[80vh] overflow-y-auto">
+          <h3 class="orbitron text-3xl font-bold mb-6 text-center text-gradient">🌙 Nightly Report - Day <span id="reporteDia"></span></h3>
+
+          <div class="space-y-6">
+            <!-- Decisiones tomadas -->
+            <div class="glass p-4 rounded-lg">
+              <h4 class="font-bold mb-3 text-lg">📋 Daily Decisions</h4>
+              <div id="reporteDecisiones" class="space-y-2">
+                <!-- Will be filled dynamically -->
+              </div>
+            </div>
+
+            <!-- Impacto en Sostenibilidad -->
+            <div class="glass p-4 rounded-lg">
+              <h4 class="font-bold mb-3 text-lg">🌍 Sustainability Impact</h4>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="text-center">
+                  <div class="text-2xl mb-1">🌱</div>
+                  <div class="text-sm text-gray-400">Soil Health</div>
+                  <div id="reporteSuelo" class="font-bold text-green-400">--</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-2xl mb-1">🦋</div>
+                  <div class="text-sm text-gray-400">Biodiversity</div>
+                  <div id="reporteBio" class="font-bold text-green-400">--</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-2xl mb-1">💧</div>
+                  <div class="text-sm text-gray-400">Water Resilience</div>
+                  <div id="reporteAgua" class="font-bold text-green-400">--</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-2xl mb-1">🌿</div>
+                  <div class="text-sm text-gray-400">Carbon Footprint</div>
+                  <div id="reporteCarbono" class="font-bold text-green-400">--</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lecciones Aprendidas -->
+            <div class="glass p-4 rounded-lg">
+              <h4 class="font-bold mb-3 text-lg">🎓 Daily Lessons</h4>
+              <div id="reporteLecciones" class="space-y-3 text-sm">
+                <!-- Will be filled dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <div class="text-center mt-6">
+            <button id="btnCerrarReporte" class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl font-bold btn-glow">Continue to Next Day 🚀</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Guardar Partida -->
+      <div id="modalGuardar" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-fade-in hidden">
+        <div class="glass rounded-2xl p-8 max-w-md w-full mx-4 animate-fade-in-up">
+          <h3 class="orbitron text-2xl font-bold mb-6 text-center">Save Game</h3>
+          <input type="text" id="saveSlotName" class="w-full px-4 py-2 glass rounded-lg mb-4" value="Save File 1" placeholder="Save slot name">
+          <div class="flex gap-4">
+            <button id="btnConfirmarGuardar" class="flex-1 px-4 py-2 bg-green-600 rounded-lg btn-glow">Save</button>
+            <button id="btnCancelarGuardar" class="flex-1 px-4 py-2 glass rounded-lg btn-glow">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de NASA Info -->
+      <div id="modalNASA" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-fade-in hidden">
+        <div class="glass rounded-2xl p-8 max-w-4xl w-full mx-4 animate-fade-in-up max-h-[80vh] overflow-y-auto">
+          <h3 class="orbitron text-3xl font-bold mb-6 text-center text-gradient">🛰️ NASA Technology in Agriculture</h3>
+          <div class="space-y-4 text-sm">
+            <div class="glass p-4 rounded-lg">
+              <h4 class="font-bold mb-2">Satellite Imagery & Maps</h4>
+              <p>NASA satellites provide high-resolution images of Earth's surface. In this game, the interactive map shows real satellite data from Esri and helps you explore different agricultural areas.</p>
+            </div>
+            <div class="glass p-4 rounded-lg">
+              <h4 class="font-bold mb-2">NDVI - Vegetation Health</h4>
+              <p>The Normalized Difference Vegetation Index measures plant health from space. Values range from -1 to 1, where higher values indicate healthier vegetation. Farmers use NDVI to monitor crop growth and detect problems early.</p>
+            </div>
+            <div class="glass p-4 rounded-lg">
+              <h4 class="font-bold mb-2">Weather & Climate Data</h4>
+              <p>Real-time weather data from NASA APIs helps predict optimal planting times and irrigation needs. Climate change monitoring shows how weather patterns affect agriculture worldwide.</p>
+            </div>
+            <div class="glass p-4 rounded-lg">
+              <h4 class="font-bold mb-2">Soil Moisture Monitoring</h4>
+              <p>Satellite sensors measure soil water content, helping farmers decide when and how much to irrigate. This prevents water waste and ensures crops get the right amount of moisture.</p>
+            </div>
+            <div class="glass p-4 rounded-lg">
+              <h4 class="font-bold mb-2">Real-World Applications</h4>
+              <p>NASA data helps farmers increase yields by 20-30%, reduce water usage by 15%, and make agriculture more sustainable. This game demonstrates how space technology benefits everyday farming.</p>
+            </div>
+          </div>
+          <div class="text-center mt-6">
+            <button onclick="closeNASA()" class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl font-bold btn-glow">Close</button>
+          </div>
+        </div>
+      </div>
+      <section class="flex justify-center gap-4">
+        <button id="btnExportar" class="px-6 py-3 glass rounded-lg btn-glow text-sm">
+          📊 Export to Spreadsheet
+        </button>
+        <button id="btnVolver" class="px-6 py-3 glass rounded-lg btn-glow text-sm">
+          🏠 Exit
+        </button>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="glass text-center py-8 text-gray-400 text-sm mt-16 animate-fade-in">
+    <div class="max-w-4xl mx-auto px-6">
+      <p class="mb-2">© 2025 Eco Harvest • Sustainable Farming Educational Game</p>
+      <p class="text-xs">Demonstrating how technology helps sustainable farming</p>
+      <div class="flex justify-center gap-6 mt-4 text-xs">
+        <span>🛰️ Satellite Imagery</span>
+        <span>🌡️ Climate Monitoring</span>
+        <span>🌿 NDVI Analysis</span>
+        <span>💧 Soil Moisture</span>
+      </div>
+      <p class="mt-2 text-xs">Learn how space technology feeds our planet!</p>
+    </div>
+  </footer>
+
+  <script>
+    /*
+     * Eco Harvest - Sustainable Farming Game
+     * Educational Game
+     * Technologies: HTML5, CSS3, JavaScript ES6+, Leaflet, Weather APIs
+     * Features: Full gamification, 3D animations, agricultural education
+     */
+
+    // Game variables
+    let cultivoEstado = 'Not planted';
+    let puntuacion = 0;
+    let dia = 1;
+    let cultivoSeleccionado = null;
+    let diasRestantes = 0;
+    let accionesDiarias = 0;
+    const maxAccionesDiarias = 5; // Daily action limit
+    let dayStartTime = Date.now();
+
+    // Crop definitions - generated dynamically
+    let cultivos = {};
+
+    // Role bonuses
+    let bonusEnergia = 0;
+    let bonusPuntuacion = 1;
+    let player = null;
+
+    // Upgrades
+    let upgrades = JSON.parse(localStorage.getItem('upgrades')) || {
+      energiaExtra: false,
+      bonusPuntos: false,
+      aguaExtra: false,
+      crecimientoRapido: false
+    };
+    let maxAgua = upgrades.aguaExtra ? 120 : 100;
+    let bonusCrecimiento = upgrades.crecimientoRapido ? 1 : 0;
+
+    // Inventory
+    let inventario = JSON.parse(localStorage.getItem('inventario')) || {};
+    let seedsInventory = JSON.parse(localStorage.getItem('seedsInventory')) || {};
+    let currentInventoryTab = 'crops';
+
+    // All available crops
+    const allCrops = [
+      { key: 'avocado', name: 'Avocado', image: '../Images for game/Crops/Avacado.png' },
+      { key: 'carrot', name: 'Carrot', image: '../Images for game/Crops/Carrot.webp' },
+      { key: 'cherry', name: 'Cherry', image: '../Images for game/Crops/Cherry.webp' },
+      { key: 'cucumber', name: 'Cucumber', image: '../Images for game/Crops/Cucumber.png' },
+      { key: 'onion', name: 'Onion', image: '../Images for game/Crops/Onion.png' },
+      { key: 'orange', name: 'Orange', image: '../Images for game/Crops/Orange.webp' },
+      { key: 'strawberry', name: 'Strawberry', image: '../Images for game/Crops/Strawberry.png' },
+      { key: 'tomato', name: 'Tomato', image: '../Images for game/Crops/Tomate.webp' },
+      { key: 'potato', name: 'Potato', image: '../Images for game/Crops/Potato.png' }
+    ];
+
+    // All available seeds (same as crops for now)
+    const allSeeds = allCrops;
+
+    // Event log
+    let eventLog = [];
+
+    // Achievements
+    let achievements = JSON.parse(localStorage.getItem('achievements')) || {
+      primerCultivo: false,
+      cosechadorExperto: false,
+      explorador: false,
+      superviviente: false,
+      millonario: false
+    };
+
+    // Daily missions
+    let misionesDiarias = JSON.parse(localStorage.getItem('misionesDiarias')) || [];
+    let diaMision = JSON.parse(localStorage.getItem('diaMision')) || 0;
+
+    // Sustainability system
+    let puntuacionSostenibilidad = {
+      saludSuelo: 0,
+      biodiversidad: 0,
+      resilienciaHidrica: 0,
+      huellaCarbono: 0
+    };
+    let puntuacionSostenibilidadGlobal = 50;
+
+    // Decisions made during the day
+    let decisionesDia = [];
+
+    function saveGameState() {
+      const state = {
+        puntuacion,
+        dia,
+        cultivoEstado,
+        cultivoSeleccionado,
+        diasRestantes,
+        accionesDiarias,
+        puntuacionSostenibilidad,
+        decisionesDia,
+        agua: document.getElementById('agua').textContent,
+        energia: document.getElementById('energia').textContent,
+        weather: document.getElementById('weather').textContent,
+        ndvi: document.getElementById('ndvi').textContent,
+        dayStartTime,
+        seedsInventory
+      };
+      localStorage.setItem('gameState', JSON.stringify(state));
+    }
+
+    function guardarPartida(slotName) {
+      const state = {
+        puntuacion,
+        dia,
+        cultivoEstado,
+        cultivoSeleccionado,
+        diasRestantes,
+        accionesDiarias,
+        puntuacionSostenibilidad,
+        decisionesDia,
+        agua: document.getElementById('agua').textContent,
+        energia: document.getElementById('energia').textContent,
+        weather: document.getElementById('weather').textContent,
+        ndvi: document.getElementById('ndvi').textContent,
+        inventario,
+        seedsInventory,
+        eventLog,
+        achievements,
+        misionesDiarias,
+        diaMision,
+        upgrades,
+        maxAgua,
+        bonusCrecimiento,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem('save_' + slotName, JSON.stringify(state));
+      alert('Game saved in ' + slotName);
+    }
+
+    function cargarPartida(slotName) {
+      const data = localStorage.getItem('save_' + slotName);
+      if (data) {
+        const state = JSON.parse(data);
+        puntuacion = state.puntuacion || 0;
+        dia = state.dia || 1;
+        cultivoEstado = state.cultivoEstado || 'Not planted';
+        cultivoSeleccionado = state.cultivoSeleccionado || null;
+        diasRestantes = state.diasRestantes || 0;
+        accionesDiarias = state.accionesDiarias || 0;
+        puntuacionSostenibilidad = state.puntuacionSostenibilidad || {
+          saludSuelo: 50,
+          biodiversidad: 50,
+          resilienciaHidrica: 50,
+          huellaCarbono: 50
+        };
+        decisionesDia = state.decisionesDia || [];
+        document.getElementById('agua').textContent = state.agua || '80%';
+        document.getElementById('energia').textContent = state.energia || '65%';
+        document.getElementById('weather').textContent = state.weather || '-- °C';
+        document.getElementById('ndvi').textContent = state.ndvi || '--';
+        inventario = state.inventario || {};
+        seedsInventory = state.seedsInventory || {};
+        eventLog = state.eventLog || [];
+        achievements = state.achievements || {};
+        misionesDiarias = state.misionesDiarias || [];
+        diaMision = state.diaMision || 0;
+        upgrades = state.upgrades || {};
+        maxAgua = state.maxAgua || 100;
+        bonusCrecimiento = state.bonusCrecimiento || 0;
+        updateDia();
+        updatePuntuacion();
+        updateSostenibilidad();
+        updateAchievementsCount();
+        updateCultivo();
+        updateInventario();
+        updateMisiones();
+        updateEventLog();
+        updateAchievements();
+        updateProgressBars();
+        alert('Game loaded from ' + slotName);
+      } else {
+        alert('Game ' + slotName + ' not found');
+      }
+    }
+
+    function updatePuntuacion() {
+      const el = document.getElementById('puntuacion');
+      el.textContent = puntuacion;
+      el.classList.add('number-change', 'animate-bounce');
+      setTimeout(() => el.classList.remove('number-change', 'animate-bounce'), 600);
+      saveGameState();
+    }
+
+    function updateSostenibilidad() {
+      puntuacionSostenibilidadGlobal = Math.round(
+        (puntuacionSostenibilidad.saludSuelo +
+         puntuacionSostenibilidad.biodiversidad +
+         puntuacionSostenibilidad.resilienciaHidrica +
+         puntuacionSostenibilidad.huellaCarbono) / 4
+      );
+      const el = document.getElementById('sostenibilidad');
+      el.textContent = puntuacionSostenibilidadGlobal;
+      el.classList.add('number-change', 'animate-bounce');
+      setTimeout(() => el.classList.remove('number-change', 'animate-bounce'), 600);
+      document.getElementById('sostenibilidad-bar').style.width = puntuacionSostenibilidadGlobal + '%';
+      saveGameState();
+    }
+
+    function updateAchievementsCount() {
+      const count = Object.values(achievements).filter(a => a).length;
+      const el = document.getElementById('achievementsCount');
+      el.textContent = `${count}/5`;
+      el.classList.add('text-purple-400');
+      el.classList.remove('text-red-400');
+    }
+
+    function consumirAccion() {
+      if (accionesDiarias >= maxAccionesDiarias) {
+        alert('Has alcanzado el límite de acciones diarias. Pasa al siguiente día.');
+        return false;
+      }
+      accionesDiarias++;
+      updateAcciones();
+      return true;
+    }
+
+    function autoNextDay() {
+      dia++;
+      dayStartTime = Date.now();
+      accionesDiarias = 0;
+      decisionesDia = [];
+      updateDia();
+      updateAchievementsCount();
+      checkMisiones('dia');
+      addEventLog(`⏭️ Día ${dia} iniciado`);
+
+      // Progreso del cultivo
+      if (cultivoEstado === 'Plantado') {
+        diasRestantes--;
+        if (diasRestantes <= 0) {
+          cultivoEstado = 'Listo para cosechar';
+          updateCultivo();
+          alert(`¡${cultivos[cultivoSeleccionado].nombre} está listo para cosechar!`);
+        } else {
+          updateCultivo();
+        }
+      } else if (cultivoEstado === 'Regado' && diasRestantes <= 0) {
+        // Ya listo
+      }
+
+      // Posibilidad de lluvia automática
+      if (cultivoEstado === 'Plantado' && Math.random() < 0.3 && diasRestantes > 1) {
+        cultivoEstado = 'Regado';
+        updateCultivo();
+        alert('¡El cultivo ha crecido con la lluvia!');
+      }
+
+      // Resetear cultivo después de cosechar
+      if (cultivoEstado === 'Cosechado') {
+        cultivoEstado = 'Not planted';
+        cultivoSeleccionado = null;
+        diasRestantes = 0;
+        document.getElementById('cultivoSeleccionado').textContent = 'No crop selected';
+        updateCultivo();
+      }
+
+      // Verificar condiciones de victoria/fracaso
+      verificarCondicionesFinJuego();
+
+      // Actualizar NDVI
+      getNDVI();
+      saveGameState();
+    }
+
+    function nextDay() {
+      const btn = document.getElementById('btnPasarDia');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '⏳ Pasando Día...';
+      btn.disabled = true;
+
+      setTimeout(() => {  // Simular procesamiento
+        dia++;
+        dayStartTime = Date.now(); // Reset day start time
+        accionesDiarias = 0; // Reset acciones diarias
+        decisionesDia = []; // Reset decisiones del día
+        updateDia();
+        updateAchievementsCount();
+        checkMisiones('dia');
+        addEventLog(`⏭️ Día ${dia} iniciado`);
+
+        // Progreso del cultivo
+        if (cultivoEstado === 'Plantado') {
+          diasRestantes--;
+          if (diasRestantes <= 0) {
+            cultivoEstado = 'Listo para cosechar';
+            updateCultivo();
+            alert(`¡${cultivos[cultivoSeleccionado].nombre} está listo para cosechar!`);
+          } else {
+            updateCultivo();
+          }
+        } else if (cultivoEstado === 'Regado' && diasRestantes <= 0) {
+          // Ya listo
+        }
+
+        // Posibilidad de lluvia automática
+        if (cultivoEstado === 'Plantado' && Math.random() < 0.3 && diasRestantes > 1) {
+          cultivoEstado = 'Regado';
+          updateCultivo();
+          alert('¡El cultivo ha crecido con la lluvia!');
+        }
+
+        // Resetear cultivo después de cosechar
+        if (cultivoEstado === 'Cosechado') {
+          cultivoEstado = 'Sin plantar';
+          cultivoSeleccionado = null;
+          diasRestantes = 0;
+          document.getElementById('cultivoSeleccionado').textContent = 'Ningún cultivo seleccionado';
+          updateCultivo();
+        }
+
+        // Eventos aleatorios
+        const evento = Math.random();
+        if (evento < 0.08) { // Sequía
+          let agua = parseInt(document.getElementById('agua').textContent);
+          const perdida = Math.min(agua, 15);
+          agua -= perdida;
+          document.getElementById('agua').textContent = agua + '%';
+          puntuacionSostenibilidad.resilienciaHidrica = Math.max(0, puntuacionSostenibilidad.resilienciaHidrica - 5);
+          updateSostenibilidad();
+          addEventLog(`🌵 Drought: Lost ${perdida}% water`);
+          alert('Drought! Water has been reduced.');
+        } else if (evento < 0.16) { // Lluvia
+          let agua = parseInt(document.getElementById('agua').textContent);
+          const ganancia = Math.min(maxAgua - agua, 20);
+          agua += ganancia;
+          document.getElementById('energia').textContent = Math.min(100, parseInt(document.getElementById('energia').textContent) + 5) + '%';
+          document.getElementById('agua').textContent = agua + '%';
+          puntuacionSostenibilidad.resilienciaHidrica += 3;
+          updateSostenibilidad();
+          addEventLog(`🌧️ Rain: +${ganancia}% water, +5% energy`);
+          alert('Rain! Water and energy increased.');
+        } else if (evento < 0.24 && cultivoEstado !== 'Not planted') { // Pest
+          if (cultivoEstado === 'Plantado') {
+            cultivoEstado = 'Dañado';
+            diasRestantes += 1;
+            puntuacionSostenibilidad.biodiversidad = Math.max(0, puntuacionSostenibilidad.biodiversidad - 5);
+            updateSostenibilidad();
+            updateCultivo();
+            addEventLog(`🐛 Pest: Crop damaged, +1 day of growth`);
+            alert('Pest! The crop is damaged. You need to water it again.');
+          }
+        } else if (evento < 0.32) { // Evento positivo: Fertilización natural
+          if (cultivoEstado === 'Plantado') {
+            diasRestantes = Math.max(1, diasRestantes - 1);
+            puntuacionSostenibilidad.saludSuelo += 3;
+            updateSostenibilidad();
+            updateCultivo();
+            addEventLog(`🌿 Natural fertilization: -1 day of growth!`);
+            alert('Natural fertilization! Your crop grows faster.');
+          }
+        } else if (evento < 0.4) { // Evento divertido: Visita de animales
+          const bonus = Math.floor(Math.random() * 30) + 10;
+          puntuacion += bonus;
+          updatePuntuacion();
+          puntuacionSostenibilidad.biodiversidad += 2;
+          updateSostenibilidad();
+          addEventLog(`🐦 Animal visit: +${bonus} points from photos!`);
+          alert(`Animal visit! You took amazing photos and earned ${bonus} points.`);
+        }
+
+        // Verificar condiciones de victoria/fracaso
+        verificarCondicionesFinJuego();
+
+        // Actualizar NDVI
+        getNDVI();
+        saveGameState();
+
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+
+        // Start timer for next day
+        startDayTimer();
+      }, 500);  // Pequeño delay para feedback
+    }
+
+    function mostrarReporteNocturno(callback) {
+      document.getElementById('reporteDia').textContent = dia;
+      const containerDecisiones = document.getElementById('reporteDecisiones');
+      containerDecisiones.innerHTML = '';
+
+      if (decisionesDia.length === 0) {
+        containerDecisiones.innerHTML = '<p class="text-gray-400">No tomaste decisiones importantes hoy.</p>';
+      } else {
+        decisionesDia.forEach(decision => {
+          const div = document.createElement('div');
+          div.className = 'glass p-3 rounded-lg';
+          div.innerHTML = `
+            <div class="font-bold">${decision.accion}</div>
+            <div class="text-sm text-gray-300">${decision.detalle}</div>
+            <div class="text-sm text-emerald-400">${decision.impacto}</div>
+          `;
+          containerDecisiones.appendChild(div);
+        });
+      }
+
+      // Mostrar cambios en sostenibilidad
+      document.getElementById('reporteSuelo').textContent = puntuacionSostenibilidad.saludSuelo;
+      document.getElementById('reporteBio').textContent = puntuacionSostenibilidad.biodiversidad;
+      document.getElementById('reporteAgua').textContent = puntuacionSostenibilidad.resilienciaHidrica;
+      document.getElementById('reporteCarbono').textContent = puntuacionSostenibilidad.huellaCarbono;
+
+      // Generar lecciones
+      const containerLecciones = document.getElementById('reporteLecciones');
+      containerLecciones.innerHTML = '';
+
+      decisionesDia.forEach(decision => {
+        let leccion = '';
+        if (decision.accion === 'Planting') {
+          leccion = 'Proper planting improves soil health through crop rotation, preventing erosion and maintaining nutrients.';
+        } else if (decision.accion === 'Watering') {
+          if (decision.impacto.includes('-3')) {
+            leccion = 'Excess watering can cause root anaerobiosis, creating perfect conditions for fungal pathogens and wasting water through runoff.';
+          } else {
+            leccion = 'Efficient watering maintains optimal soil moisture, improving water resilience and reducing plant stress.';
+          }
+        } else if (decision.accion === 'Harvest') {
+          leccion = 'Sustainable harvesting promotes biodiversity by allowing natural ecosystems to recover between agricultural cycles.';
+        }
+        if (leccion) {
+          const div = document.createElement('div');
+          div.className = 'glass p-3 rounded-lg';
+          div.innerHTML = `<p>${leccion}</p>`;
+          containerLecciones.appendChild(div);
+        }
+      });
+
+      document.getElementById('modalReporte').classList.remove('hidden');
+
+      document.getElementById('btnCerrarReporte').onclick = () => {
+        document.getElementById('modalReporte').classList.add('hidden');
+        callback();
+      };
+    }
+
+    function verificarCondicionesFinJuego() {
+      if (puntuacionSostenibilidadGlobal <= 0) {
+        // Fracaso por sostenibilidad
+        mostrarFinJuego('fracaso', 'Environmental Collapse', 'Your farm has suffered an environmental collapse. The soil is sterile, the water contaminated, and biodiversity destroyed.');
+      } else if (puntuacion < -100) {
+        // Fracaso por bancarrota
+        mostrarFinJuego('fracaso', 'Bankruptcy', 'You have accumulated too many losses. The farm is no longer economically sustainable.');
+      } else if (dia >= 60) {
+        // Victoria por completar 60 días
+        const certificacion = puntuacionSostenibilidadGlobal >= 80 ? 'Oro' : puntuacionSostenibilidadGlobal >= 60 ? 'Plata' : 'Bronce';
+        mostrarFinJuego('victoria', `Certification ${certificacion}`, `Congratulations! You have completed 60 days of sustainable agriculture with a sustainability score of ${puntuacionSostenibilidadGlobal}%.`);
+      }
+    }
+
+    function mostrarFinJuego(tipo, titulo, mensaje) {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-fade-in';
+      modal.innerHTML = `
+        <div class="glass rounded-2xl p-8 max-w-2xl w-full mx-4 animate-fade-in-up text-center">
+          <h3 class="orbitron text-3xl font-bold mb-6 ${tipo === 'victoria' ? 'text-gradient' : 'text-red-400'}">${titulo}</h3>
+          <p class="text-lg mb-6">${mensaje}</p>
+          <div class="space-y-4 mb-6">
+            <div>Puntuación Final: <span class="font-bold text-yellow-400">${puntuacion}</span></div>
+            <div>Sostenibilidad Global: <span class="font-bold text-green-400">${puntuacionSostenibilidadGlobal}%</span></div>
+            <div>Días Sobrevividos: <span class="font-bold text-blue-400">${dia}</span></div>
+          </div>
+          <button onclick="location.reload()" class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl font-bold btn-glow">Jugar de Nuevo 🚀</button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    function exportarDatos() {
+      let csv = 'Day,Action,Detail,Impact,Score,Global Sustainability,Soil Health,Biodiversity,Water Resilience,Carbon Footprint\n';
+
+      // Agregar datos diarios
+      for (let d = 1; d <= dia; d++) {
+        // Aquí podríamos almacenar datos históricos, pero por simplicidad exportamos el estado actual
+        csv += `${d},Estado del Día,Fin del día ${d},--,${puntuacion},${puntuacionSostenibilidadGlobal},${puntuacionSostenibilidad.saludSuelo},${puntuacionSostenibilidad.biodiversidad},${puntuacionSostenibilidad.resilienciaHidrica},${puntuacionSostenibilidad.huellaCarbono}\n`;
+      }
+
+      // Agregar decisiones del día actual
+      decisionesDia.forEach(decision => {
+        csv += `${dia},${decision.accion},"${decision.detalle}","${decision.impacto}",${puntuacion},${puntuacionSostenibilidadGlobal},${puntuacionSostenibilidad.saludSuelo},${puntuacionSostenibilidad.biodiversidad},${puntuacionSostenibilidad.resilienciaHidrica},${puntuacionSostenibilidad.huellaCarbono}\n`;
+      });
+
+      // Crear y descargar el archivo
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `eco-harvest-datos-dia-${dia}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      alert('Data exported successfully to CSV. You can open it in Excel or Google Sheets.');
+    }
+
+    function saveGameFile() {
+      const saveData = {
+        player,
+        puntuacion,
+        dia,
+        cultivoEstado,
+        cultivoSeleccionado,
+        diasRestantes,
+        accionesDiarias,
+        puntuacionSostenibilidad,
+        decisionesDia,
+        agua: document.getElementById('agua').textContent,
+        energia: document.getElementById('energia').textContent,
+        weather: document.getElementById('weather').textContent,
+        ndvi: document.getElementById('ndvi').textContent,
+        inventario,
+        eventLog,
+        achievements,
+        misionesDiarias,
+        diaMision,
+        upgrades,
+        maxAgua,
+        bonusCrecimiento,
+        timestamp: new Date().toISOString()
+      };
+
+      const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'save file 1.json');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      alert('Game saved as "save file 1.json"!');
+    }
+
+    function updateCultivo() {
+      let texto = cultivoEstado;
+      let emojiVisual = '🌱';
+      if (cultivoSeleccionado && cultivoEstado !== 'Not planted') {
+        texto += ` (${cultivos[cultivoSeleccionado].emoji} ${cultivos[cultivoSeleccionado].nombre})`;
+        if (cultivoEstado === 'Plantado') emojiVisual = '🌿';
+        else if (cultivoEstado === 'Regado') emojiVisual = '🌾';
+        else if (cultivoEstado === 'Listo para cosechar') emojiVisual = cultivos[cultivoSeleccionado].emoji;
+        else if (cultivoEstado === 'Dañado') emojiVisual = '🐛';
+        else if (cultivoEstado === 'Cosechado') emojiVisual = '✅';
+      }
+      document.getElementById('cultivo').textContent = texto;
+      document.getElementById('diasCrecimiento').textContent = diasRestantes > 0 ? `Días restantes: ${diasRestantes}` : 'Días restantes: --';
+      const cultivoVisualEl = document.getElementById('cultivoVisual');
+      if (cultivoVisualEl.textContent !== emojiVisual) {
+        cultivoVisualEl.classList.add('animate-pulse');
+        setTimeout(() => cultivoVisualEl.classList.remove('animate-pulse'), 600);
+      }
+      cultivoVisualEl.textContent = emojiVisual;
+      cultivoVisualEl.classList.add('animate-bounce');
+      setTimeout(() => cultivoVisualEl.classList.remove('animate-bounce'), 600);
+    }
+
+    function updateInventario() {
+      const container = document.getElementById('inventario');
+      container.innerHTML = '';
+      for (const [tipo, cantidad] of Object.entries(inventario)) {
+        if (cantidad > 0) {
+          const div = document.createElement('div');
+          div.className = 'glass p-3 rounded-lg text-center card-hover animate-fade-in-scale';
+          div.innerHTML = `<div class="text-2xl">${cultivos[tipo].emoji}</div><p class="font-bold">${cultivos[tipo].nombre}</p><p>x${cantidad}</p>`;
+          container.appendChild(div);
+        }
+      }
+      localStorage.setItem('inventario', JSON.stringify(inventario));
+      updateModalInventory();
+    }
+
+    function updateModalInventory() {
+      const container = document.getElementById('modalInventoryContent');
+      container.innerHTML = '';
+      if (currentInventoryTab === 'crops') {
+        for (const crop of allCrops) {
+          const cantidad = inventario[crop.key] || 0;
+          const div = document.createElement('div');
+          div.className = 'glass p-3 rounded-lg text-center card-hover';
+          div.innerHTML = `<img src="${crop.image}" class="w-12 h-12 mx-auto mb-2" alt="${crop.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjZGRkIi8+Cjx0ZXh0IHg9IjI0IiB5PSIyNCIgZm9udC1zaXplPSIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzk5OSI+UzwvdGV4dD4KPHN2Zz4='"/><p class="font-bold">${crop.name}</p><p>x${cantidad}</p>`;
+          container.appendChild(div);
+        }
+      } else if (currentInventoryTab === 'seeds') {
+        for (const seed of allSeeds) {
+          const cantidad = seedsInventory[seed.key] || 0;
+          const div = document.createElement('div');
+          div.className = 'glass p-3 rounded-lg text-center card-hover';
+          div.innerHTML = `<img src="${seed.image}" class="w-12 h-12 mx-auto mb-2" alt="${seed.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjZGRkIi8+Cjx0ZXh0IHg9IjI0IiB5PSIyNCIgZm9udC1zaXplPSIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzk5OSI+UzwvdGV4dD4KPHN2Zz4='"/><p class="font-bold">${seed.name} Seed</p><p>x${cantidad}</p>`;
+          container.appendChild(div);
+        }
+      }
+      // Update tab buttons
+      document.getElementById('btnInventoryCrops').classList.toggle('active', currentInventoryTab === 'crops');
+      document.getElementById('btnInventorySeeds').classList.toggle('active', currentInventoryTab === 'seeds');
+    }
+
+    function updateModalAchievements() {
+      const container = document.getElementById('modalAchievementsContent');
+      container.innerHTML = '';
+      const achievementList = [
+        { key: 'primerCultivo', name: '🌱 First Crop', desc: 'Plant your first crop' },
+        { key: 'cosechadorExperto', name: '🌾 Harvest Expert', desc: 'Harvest 10 crops' },
+        { key: 'explorador', name: '🗺️ Explorer', desc: 'Explore 5 areas on the map' },
+        { key: 'superviviente', name: '🛡️ Survivor', desc: 'Survive 10 days' },
+        { key: 'millonario', name: '💰 Millionaire', desc: 'Accumulate 1000 points' }
+      ];
+      achievementList.forEach(ach => {
+        const div = document.createElement('div');
+        const isUnlocked = achievements[ach.key];
+        div.className = `glass p-4 rounded-lg text-center card-hover ${isUnlocked ? 'bg-green-900/50 border-green-500' : 'bg-gray-800/50 border-gray-600'}`;
+        div.innerHTML = `
+          <div class="text-3xl mb-2">${isUnlocked ? ach.name.split(' ')[0] : '🔒'}</div>
+          <div class="text-lg font-bold mb-1">${ach.name}</div>
+          <div class="text-sm text-gray-400">${ach.desc}</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function updateMisiones() {
+      const container = document.getElementById('misiones');
+      container.innerHTML = '';
+      misionesDiarias.forEach((mision, index) => {
+        const div = document.createElement('div');
+        div.className = 'glass p-3 rounded-lg flex justify-between items-center card-hover';
+        const completada = mision.completada ? '✅' : '⏳';
+        div.innerHTML = `<span>${mision.descripcion} (${mision.progreso}/${mision.objetivo})</span><span>${completada}</span>`;
+        container.appendChild(div);
+      });
+    }
+
+    function addEventLog(mensaje) {
+      const now = new Date();
+      const time = now.toLocaleTimeString();
+      eventLog.unshift(`${time}: ${mensaje}`);
+      if (eventLog.length > 10) eventLog.pop(); // Mantener solo 10 entradas
+      updateEventLog();
+    }
+
+    function updateEventLog() {
+      const container = document.getElementById('eventLog');
+      container.innerHTML = '';
+      eventLog.forEach(evento => {
+        const div = document.createElement('div');
+        div.className = 'text-gray-300';
+        div.textContent = evento;
+        container.appendChild(div);
+      });
+    }
+
+    function updateAchievements() {
+      const container = document.getElementById('achievements');
+      container.innerHTML = '';
+      const achievementList = [
+        { key: 'primerCultivo', name: '🌱 First Crop', desc: 'Plant your first crop' },
+        { key: 'cosechadorExperto', name: '🌾 Harvest Expert', desc: 'Harvest 10 crops' },
+        { key: 'explorador', name: '🗺️ Explorer', desc: 'Explore 5 areas on the map' },
+        { key: 'superviviente', name: '🛡️ Survivor', desc: 'Survive 10 days' },
+        { key: 'millonario', name: '💰 Millionaire', desc: 'Accumulate 1000 points' }
+      ];
+      achievementList.forEach(ach => {
+        const div = document.createElement('div');
+        div.className = `glass p-3 rounded-lg text-center card-hover ${achievements[ach.key] ? 'bg-green-900/50' : 'bg-gray-800/50'}`;
+        div.innerHTML = `
+          <div class="text-2xl mb-1">${achievements[ach.key] ? ach.name.split(' ')[0] : '🔒'}</div>
+          <div class="text-sm font-bold">${ach.name}</div>
+          <div class="text-xs text-gray-400">${ach.desc}</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function showCelebration() {
+      // Crear efecto de confetti simple
+      for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.animationDelay = Math.random() * 2 + 's';
+        confetti.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+        document.body.appendChild(confetti);
+        setTimeout(() => confetti.remove(), 3000);
+      }
+    }
+
+    function checkAchievements() {
+      if (!achievements.primerCultivo && cultivoEstado !== 'Not planted') {
+        achievements.primerCultivo = true;
+        addEventLog('🏆 Achievement unlocked: First Crop!');
+        showCelebration();
+      }
+      const totalCosechas = Object.values(inventario).reduce((a, b) => a + b, 0);
+      if (!achievements.cosechadorExperto && totalCosechas >= 10) {
+        achievements.cosechadorExperto = true;
+        addEventLog('🏆 Achievement unlocked: Harvest Expert!');
+        showCelebration();
+      }
+      if (!achievements.superviviente && dia >= 10) {
+        achievements.superviviente = true;
+        addEventLog('🏆 Achievement unlocked: Survivor!');
+        showCelebration();
+      }
+      if (!achievements.millonario && puntuacion >= 1000) {
+        achievements.millonario = true;
+        addEventLog('🏆 Achievement unlocked: Millionaire!');
+        showCelebration();
+      }
+      localStorage.setItem('achievements', JSON.stringify(achievements));
+      updateAchievementsCount();
+      updateModalAchievements();
+    }
+
+    function checkMisiones(tipo, cantidad = 1) {
+      misionesDiarias.forEach(mision => {
+        if (!mision.completada) {
+          if (tipo === 'cosechar' && mision.descripcion.includes('Cosechar')) {
+            mision.progreso += cantidad;
+          } else if (tipo === 'dia' && mision.descripcion.includes('Pasar')) {
+            mision.progreso += cantidad;
+          } else if (tipo === 'analizar' && mision.descripcion.includes('Analizar')) {
+            mision.progreso += cantidad;
+          }
+          if (mision.progreso >= mision.objetivo) {
+            mision.completada = true;
+            puntuacion += mision.recompensa;
+            updatePuntuacion();
+            alert(`¡Misión completada! +${mision.recompensa} puntos`);
+          }
+        }
+      });
+      localStorage.setItem('misionesDiarias', JSON.stringify(misionesDiarias));
+      updateMisiones();
+    }
+
+    function seleccionarCultivo(tipo) {
+      cultivoSeleccionado = tipo;
+      document.getElementById('cultivoSeleccionado').textContent = `Seleccionado: ${cultivos[tipo].emoji} ${cultivos[tipo].nombre}`;
+    }
+
+    function updateDia() {
+      document.getElementById('dia').textContent = dia;
+    }
+
+    function updateClock() {
+      const elapsed = Date.now() - dayStartTime;
+      let gameMinutes = (elapsed / 1000 / 300) * 1440; // 300 seconds = 1440 game minutes
+      console.log('updateClock: elapsed:', elapsed, 'gameMinutes:', gameMinutes);
+      if (gameMinutes >= 1440) {
+        console.log('Advancing day');
+        autoNextDay();
+        gameMinutes -= 1440;
+      }
+      const totalMinutes = gameMinutes % 1440;
+      const hours = Math.floor(totalMinutes / 60);
+      const mins = Math.floor(totalMinutes % 60);
+      const ampm = hours < 12 ? 'AM' : 'PM';
+      const displayHours = hours % 12 || 12;
+      const clockText = `${displayHours}:${mins.toString().padStart(2,'0')} ${ampm}`;
+      document.getElementById('clock').textContent = clockText;
+      console.log('Clock updated to:', clockText);
+    }
+
+    function animateResource(id) {
+      const el = document.getElementById(id);
+      el.classList.add('number-change');
+      setTimeout(() => el.classList.remove('number-change'), 500);
+      updateProgressBars();
+    }
+
+    function updateProgressBars() {
+      const agua = parseInt(document.getElementById('agua').textContent);
+      const energia = parseInt(document.getElementById('energia').textContent);
+      document.getElementById('agua-bar').style.width = agua + '%';
+      document.getElementById('energia-bar').style.width = energia + '%';
+    }
+
+    // Función para calcular NDVI simulado
+    function getNDVI() {
+      const agua = parseInt(document.getElementById('agua').textContent);
+      const tempText = document.getElementById('weather').textContent;
+      const temp = parseFloat(tempText.replace(' °C', '')) || 20;
+      const ndvi = Math.min(1, Math.max(0, (agua / 100) * (1 - Math.abs(temp - 25)/25)));
+      document.getElementById('ndvi').textContent = ndvi.toFixed(2);
+    }
+
+    function comprarUpgrade(tipo, costo) {
+      if (puntuacion >= costo && !upgrades[tipo]) {
+        puntuacion -= costo;
+        upgrades[tipo] = true;
+        localStorage.setItem('upgrades', JSON.stringify(upgrades));
+        updatePuntuacion();
+        alert('¡Upgrade comprado!');
+        // Aplicar inmediatamente
+        if (tipo === 'aguaExtra') maxAgua = 120;
+        if (tipo === 'crecimientoRapido') bonusCrecimiento = 1;
+      } else {
+        alert('No tienes suficientes puntos o ya tienes este upgrade.');
+      }
+    }
+
+    // Funciones para interactividad del mapa
+    function analizarArea(nombre, tipo) {
+      let mensaje = `Analizando ${nombre}...\n`;
+      let bonus = 0;
+      if (tipo === 'bosque') {
+        mensaje += '🌲 Área boscosa detectada. Posible fuente de sombra natural.\n';
+        bonus = Math.floor(Math.random() * 10) + 5;
+        mensaje += `Bonus de energía encontrado: +${bonus}%`;
+        const energia = parseInt(document.getElementById('energia').textContent);
+        document.getElementById('energia').textContent = Math.min(100, energia + bonus) + '%';
+      } else if (tipo === 'campo') {
+        mensaje += '🌾 Campo abierto ideal para expansión.\n';
+        bonus = Math.floor(Math.random() * 15) + 10;
+        mensaje += `Potencial agrícola alto: +${bonus} puntos`;
+        puntuacion += bonus;
+        updatePuntuacion();
+      } else if (tipo === 'río') {
+        mensaje += '💧 Fuente de agua cercana detectada.\n';
+        bonus = Math.floor(Math.random() * 20) + 15;
+        mensaje += `Recursos hídricos: +${bonus}% agua`;
+        const agua = parseInt(document.getElementById('agua').textContent);
+        document.getElementById('agua').textContent = Math.min(maxAgua, agua + bonus) + '%';
+      } else if (tipo === 'montaña') {
+        mensaje += '⛰️ Terreno montañoso. Riesgo de erosión.\n';
+        bonus = Math.floor(Math.random() * 5) + 1;
+        mensaje += `Minerales encontrados: +${bonus} puntos`;
+        puntuacion += bonus;
+        updatePuntuacion();
+      }
+      alert(mensaje);
+      checkMisiones('analizar');
+    }
+
+    function explorarCoordenadas(lat, lng) {
+      const dist = Math.sqrt((lat - 19.43)**2 + (lng + 99.13)**2) * 111; // km aproximado
+      let mensaje = `Explorando coordenadas: ${lat.toFixed(4)}, ${lng.toFixed(4)}\n`;
+      mensaje += `Distancia desde granja: ${dist.toFixed(1)} km\n`;
+
+      if (dist < 5) {
+        mensaje += 'Área cercana a la granja. Ideal para monitoreo diario.';
+      } else if (dist < 20) {
+        mensaje += 'Área intermedia. Requiere viajes ocasionales.';
+      } else {
+        mensaje += 'Área distante. Difícil acceso, pero potencial alto.';
+      }
+
+
+      // Evento aleatorio adicional
+      const evento = Math.random();
+      if (evento < 0.2) {
+        mensaje += '\n\n🎉 ¡Descubrimiento! Encontraste un recurso oculto.';
+        const tipo = Math.random() < 0.5 ? 'puntos' : 'energia';
+        const cantidad = Math.floor(Math.random() * 20) + 10;
+        if (tipo === 'puntos') {
+          puntuacion += cantidad;
+          updatePuntuacion();
+          mensaje += ` +${cantidad} puntos!`;
+        } else {
+          const energia = parseInt(document.getElementById('energia').textContent);
+          document.getElementById('energia').textContent = Math.min(100, energia + cantidad) + '%';
+          mensaje += ` +${cantidad}% energía!`;
+        }
+      } else if (evento < 0.3) {
+        mensaje += '\n\n⚠️ ¡Peligro! Área con condiciones adversas.';
+        const perdida = Math.floor(Math.random() * 10) + 5;
+        const energia = parseInt(document.getElementById('energia').textContent);
+        document.getElementById('energia').textContent = Math.max(0, energia - perdida) + '%';
+        mensaje += ` Perdiste ${perdida}% energía por el viaje.`;
+      }
+
+      alert(mensaje);
+      checkAchievements(); // Posible logro de explorador
+    }
+
+    window.addEventListener('load', () => {
+      // Mostrar datos del jugador
+      player = JSON.parse(localStorage.getItem('player'));
+      const info = document.getElementById('playerInfo');
+      if (player) {
+        let habilidad = '';
+        if (player.rol === 'Agro-Analista') habilidad = ' (Análisis preciso)';
+        else if (player.rol === 'Eco-Ingeniero') habilidad = ' (Regeneración energía)';
+        else if (player.rol === 'Bio-Tecnólogo') habilidad = ' (Bonos cosecha)';
+        info.innerHTML = `👩‍🚀 <b>${player.nombre}</b> — ${player.rol}${habilidad}`;
+
+        // Generate crop definitions
+        for (const crop of allCrops) {
+          cultivos[crop.key] = {
+            nombre: crop.name,
+            energia: Math.floor(Math.random() * 11) + 5, // 5-15
+            agua: Math.floor(Math.random() * 11) + 5, // 5-15
+            dias: Math.floor(Math.random() * 5) + 1, // 1-5
+            puntos: Math.floor(Math.random() * 51) + 50, // 50-100
+            emoji: '🌱'
+          };
+        }
+
+        function plantarCultivo(tipo) {
+          if (!consumirAccion()) return;
+          const energia = parseInt(document.getElementById('energia').textContent);
+          const costoEnergia = cultivos[tipo].energia;
+          const hasSeed = seedsInventory[tipo] && seedsInventory[tipo] > 0;
+          if (cultivoEstado === 'Not planted' && energia >= costoEnergia && hasSeed) {
+            cultivoSeleccionado = tipo;
+            cultivoEstado = 'Plantado';
+            diasRestantes = Math.max(1, cultivos[tipo].dias - bonusCrecimiento);
+            document.getElementById('energia').textContent = (energia - costoEnergia) + '%';
+            seedsInventory[tipo]--;
+            updateProgressBars();
+            updateCultivo();
+            decisionesDia.push({
+              accion: 'Siembra',
+              detalle: `Plantaste ${cultivos[tipo].nombre}`,
+              impacto: `Energía: -${costoEnergia}%, Sostenibilidad: +2 (rotación de cultivos)`
+            });
+            puntuacionSostenibilidad.saludSuelo += 2;
+            updateSostenibilidad();
+            addEventLog(`🌱 Plantaste ${cultivos[tipo].nombre} (-${costoEnergia}% energía)`);
+            alert(`¡${cultivos[tipo].nombre} plantado!`);
+            checkAchievements();
+            updateCropGrid();
+          } else {
+            accionesDiarias--; // Revertir acción
+            updateAcciones();
+            if (!hasSeed) {
+              alert('No tienes semillas para este cultivo.');
+            } else {
+              alert('No puedes plantar ahora. Verifica energía y semillas.');
+            }
+          }
+        }
+
+        function updateCropGrid() {
+          const grid = document.getElementById('cropGrid');
+          grid.innerHTML = '';
+          for (const crop of allCrops) {
+            const hasSeeds = seedsInventory[crop.key] && seedsInventory[crop.key] > 0;
+            const div = document.createElement('div');
+            div.className = 'glass p-4 rounded-lg cursor-pointer card-hover';
+            div.onclick = () => seleccionarCultivo(crop.key);
+            div.innerHTML = `
+              <div class="text-center">
+                <img src="${crop.image}" class="w-12 h-12 mx-auto mb-2" alt="${crop.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjZGRkIi8+Cjx0ZXh0IHg9IjI0IiB5PSIyNCIgZm9udC1zaXplPSIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzk5OSI+UzwvdGV4dD4KPHN2Zz4='"/>
+                <h4 class="font-bold">${crop.name}</h4>
+                <p class="text-sm text-gray-400">Energy: ${cultivos[crop.key].energia} | Water: ${cultivos[crop.key].agua} | Days: ${cultivos[crop.key].dias} | Points: ${cultivos[crop.key].puntos}</p>
+                <p class="text-sm text-yellow-400">Seeds: ${seedsInventory[crop.key] || 0}</p>
+                <button onclick="event.stopPropagation(); plantarCultivo('${crop.key}')" class="mt-2 px-3 py-1 bg-green-600 rounded btn-glow text-sm ${hasSeeds ? '' : 'opacity-50 cursor-not-allowed'}" ${hasSeeds ? '' : 'disabled'}>Plant</button>
+              </div>
+            `;
+            grid.appendChild(div);
+          }
+        }
+
+        // Populate crop selection grid
+        updateCropGrid();
+
+        // Aplicar bonos
+        if (player.rol === 'Eco-Ingeniero') bonusEnergia = 5;
+        else if (player.rol === 'Bio-Tecnólogo') bonusPuntuacion = 1.2;
+
+        // Generar misiones si es nuevo día
+        if (diaMision !== dia) {
+          misionesDiarias = [
+            { descripcion: 'Cosechar 2 cultivos', objetivo: 2, progreso: 0, completada: false, recompensa: 50 },
+            { descripcion: 'Pasar 3 días', objetivo: 3, progreso: 0, completada: false, recompensa: 30 },
+            { descripcion: 'Analizar campo 5 veces', objetivo: 5, progreso: 0, completada: false, recompensa: 40 }
+          ];
+          diaMision = dia;
+          localStorage.setItem('diaMision', dia);
+          localStorage.setItem('misionesDiarias', JSON.stringify(misionesDiarias));
+        }
+
+        // Cargar estado del juego
+        const gameState = JSON.parse(localStorage.getItem('gameState'));
+        if (gameState) {
+          puntuacion = gameState.puntuacion || 0;
+          dia = gameState.dia || 1;
+          cultivoEstado = gameState.cultivoEstado || 'Not planted';
+          cultivoSeleccionado = gameState.cultivoSeleccionado || null;
+          diasRestantes = gameState.diasRestantes || 0;
+          accionesDiarias = gameState.accionesDiarias || 0;
+          puntuacionSostenibilidad = gameState.puntuacionSostenibilidad || {
+            saludSuelo: 0,
+            biodiversidad: 0,
+            resilienciaHidrica: 0,
+            huellaCarbono: 0
+          };
+          decisionesDia = gameState.decisionesDia || [];
+          document.getElementById('agua').textContent = gameState.agua || '50%';
+          document.getElementById('energia').textContent = gameState.energia || '50%';
+          document.getElementById('weather').textContent = gameState.weather || '-- °C';
+          document.getElementById('ndvi').textContent = gameState.ndvi || '--';
+          dayStartTime = gameState.dayStartTime || Date.now();
+          updateProgressBars();
+        }
+
+        // Mostrar tutorial si es primera vez
+        const tutorialShown = localStorage.getItem('tutorialShown');
+        const fromMini = window.location.search.includes('fromMini');
+        const showTutorial = localStorage.getItem('showTutorial');
+        if (showTutorial === 'true' || (!tutorialShown && !fromMini)) {
+          document.getElementById('modalTutorial').classList.remove('hidden');
+          localStorage.removeItem('showTutorial');
+        }
+
+        // Actualizar UI
+        updateDia();
+        updatePuntuacion();
+        updateSostenibilidad();
+        updateAchievementsCount();
+        updateCultivo();
+        updateInventario();
+        updateMisiones();
+        updateEventLog();
+        addEventLog('Game started - Welcome to Eco Harvest!');
+        checkAchievements();
+        updateModalInventory();
+        updateModalAchievements();
+
+        // Inventory tab switching
+        document.getElementById('btnInventoryCrops').addEventListener('click', () => {
+          currentInventoryTab = 'crops';
+          updateModalInventory();
+        });
+        document.getElementById('btnInventorySeeds').addEventListener('click', () => {
+          currentInventoryTab = 'seeds';
+          updateModalInventory();
+        });
+
+        // Start clock update
+        setInterval(updateClock, 1000);
+        updateClock(); // Initial update
+
+        // Inicializar mapa satelital
+        const map = L.map('mapa').setView([20, -100], 3);
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        }).addTo(map).on('tileerror', function(e) {
+            // Fallback a mapa básico si falla
+            map.eachLayer(function(layer) {
+                map.removeLayer(layer);
+            });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+        });
+
+        // Agregar controles y marcador
+        L.control.scale().addTo(map);
+        const granjaMarker = L.marker([43.7, -79.4]).addTo(map).bindPopup('🏠 Your main farm in Canada');
+
+        // Añadir marcadores de áreas de interés
+        const areasInteres = [
+          { lat: 43.7, lng: -79.4, nombre: 'Toronto Area', tipo: 'bosque' },
+          { lat: 43.65, lng: -79.35, nombre: 'Ontario Fields', tipo: 'campo' },
+          { lat: 43.75, lng: -79.45, nombre: 'Lake Ontario', tipo: 'río' },
+          { lat: 43.8, lng: -79.5, nombre: 'Northern Hills', tipo: 'montaña' }
+        ];
+
+        let areaMarkers = [];
+
+        function updateMarkerSizes() {
+          const zoom = map.getZoom();
+          const size = Math.max(15, zoom * 2); // Scale proportionally with zoom for better visibility
+          areaMarkers.forEach(marker => {
+            const area = marker.options.areaData;
+            const icon = L.divIcon({
+              className: 'custom-marker',
+              html: area.tipo === 'bosque' ? '🌲' : area.tipo === 'campo' ? '🌾' : area.tipo === 'río' ? '💧' : '⛰️',
+              iconSize: [size, size],
+              iconAnchor: [size/2, size/2]
+            });
+            marker.setIcon(icon);
+          });
+        }
+
+        areasInteres.forEach(area => {
+          const icon = L.divIcon({
+            className: 'custom-marker',
+            html: area.tipo === 'bosque' ? '🌲' : area.tipo === 'campo' ? '🌾' : area.tipo === 'río' ? '💧' : '⛰️',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          });
+          const marker = L.marker([area.lat, area.lng], { icon, areaData: area }).addTo(map).bindPopup(`
+            <b>${area.nombre}</b><br>
+            Tipo: ${area.tipo}<br>
+            <button onclick="analizarArea('${area.nombre}', '${area.tipo}')">🔍 Analizar Área</button>
+          `);
+          areaMarkers.push(marker);
+        });
+
+        updateMarkerSizes();
+        map.on('zoomend', updateMarkerSizes);
+
+        // Evento de click en el mapa
+        map.on('click', function(e) {
+            const { lat, lng } = e.latlng;
+            // Check if within Canada, Mexico, USA, South America, or Africa bounds
+            const inCanada = lat >= 41 && lat <= 83 && lng >= -141 && lng <= -52;
+            const inMexico = lat >= 14 && lat <= 32 && lng >= -119 && lng <= -86;
+            const inUSA = lat >= 32 && lat <= 49.4 && lng >= -125.0 && lng <= -66.9;
+            const inSouthAmerica = lat >= -55 && lat <= 10 && lng >= -81 && lng <= -35;
+            const inAfrica = lat >= -35 && lat <= 37 && lng >= -17 && lng <= 51;
+            if (inCanada || inMexico || inUSA || inSouthAmerica || inAfrica) {
+                const region = inCanada ? 'Canada' : inMexico ? 'Mexico' : inUSA ? 'USA' : inSouthAmerica ? 'SouthAmerica' : 'Africa';
+                const popup = L.popup()
+                    .setLatLng([lat, lng])
+                    .setContent(`
+                        <b>Coordenadas:</b> ${lat.toFixed(4)}, ${lng.toFixed(4)}<br>
+                        <b>Región:</b> ${region}<br>
+                        <button onclick="exploreArea()">🗺️ Explorar</button>
+                    `)
+                    .openOn(map);
+            }
+        });
+
+        window.exploreArea = function() {
+            const energia = parseInt(document.getElementById('energia').textContent);
+            if (energia >= 5) {
+                document.getElementById('energia').textContent = (energia - 5) + '%';
+                updateProgressBars();
+                saveGameState();
+                // Determine region from last clicked coordinates
+                const lastClick = map._popup._latlng;
+                const inCanada = lastClick.lat >= 41 && lastClick.lat <= 83 && lastClick.lng >= -141 && lastClick.lng <= -52;
+                const region = inCanada ? 'Canada' : 'USA';
+                window.location.href = 'MiniJuego.html?region=' + region;
+            } else {
+                alert('Not enough energy to explore! Need at least 5% energy.');
+            }
+        }
+
+        // Parallax effect
+        window.addEventListener('scroll', () => {
+          const scrolled = window.pageYOffset;
+          const rate = scrolled * -0.5;
+          document.querySelector('.main-bg').style.transform = `translateZ(-50px) scale(1.1) translateY(${rate}px)`;
+        });
+
+        // Asignar event listeners
+        // Acciones agrícolas
+        document.getElementById('btnPlantar').addEventListener('click', () => {
+          if (!consumirAccion()) return;
+          if (!cultivoSeleccionado) {
+            alert('Selecciona un cultivo primero.');
+            return;
+          }
+          const energia = parseInt(document.getElementById('energia').textContent);
+          const costoEnergia = cultivos[cultivoSeleccionado].energia;
+          const hasSeed = seedsInventory[cultivoSeleccionado] && seedsInventory[cultivoSeleccionado] > 0;
+          if (cultivoEstado === 'Not planted' && energia >= costoEnergia && hasSeed) {
+            cultivoEstado = 'Plantado';
+            diasRestantes = Math.max(1, cultivos[cultivoSeleccionado].dias - bonusCrecimiento);
+            document.getElementById('energia').textContent = (energia - costoEnergia) + '%';
+            seedsInventory[cultivoSeleccionado]--;
+            updateProgressBars();
+            updateCultivo();
+            decisionesDia.push({
+              accion: 'Planting',
+              detalle: `Planted ${cultivos[cultivoSeleccionado].nombre}`,
+              impacto: `Energy: -${costoEnergia}%, Sustainability: +2 (crop rotation)`
+            });
+            puntuacionSostenibilidad.saludSuelo += 2;
+            updateSostenibilidad();
+            addEventLog(`🌱 Plantaste ${cultivos[cultivoSeleccionado].nombre} (-${costoEnergia}% energía)`);
+            alert(`¡${cultivos[cultivoSeleccionado].nombre} plantado!`);
+            checkAchievements();
+          } else {
+            accionesDiarias--; // Revertir acción si no se pudo completar
+            updateAcciones();
+            if (!hasSeed) {
+              alert('No tienes semillas para este cultivo.');
+            } else {
+              alert('No puedes plantar ahora. Verifica energía, semillas y selección de cultivo.');
+            }
+          }
+        });
+
+        document.getElementById('btnRegar').addEventListener('click', () => {
+          if (!consumirAccion()) return;
+          if (!cultivoSeleccionado) return;
+          const agua = parseInt(document.getElementById('agua').textContent);
+          const costoAgua = cultivos[cultivoSeleccionado].agua;
+          if ((cultivoEstado === 'Plantado' || cultivoEstado === 'Dañado') && agua >= costoAgua) {
+            cultivoEstado = 'Regado';
+            document.getElementById('agua').textContent = (agua - costoAgua) + '%';
+            updateProgressBars();
+            updateCultivo();
+            decisionesDia.push({
+              accion: 'Watering',
+              detalle: `Watered ${cultivos[cultivoSeleccionado].nombre} with ${costoAgua}% water`,
+              impacto: `Water: -${costoAgua}%, Sustainability: ${costoAgua > 20 ? '-3 (excess water)' : '+1 (efficient watering)'}`
+            });
+            if (costoAgua > 20) {
+              puntuacionSostenibilidad.resilienciaHidrica = Math.max(0, puntuacionSostenibilidad.resilienciaHidrica - 3);
+            } else {
+              puntuacionSostenibilidad.resilienciaHidrica += 1;
+            }
+            updateSostenibilidad();
+            alert('¡Cultivo regado!');
+          } else {
+            accionesDiarias--; // Revertir acción
+            updateAcciones();
+            alert('No puedes regar ahora. Verifica agua.');
+          }
+        });
+
+        document.getElementById('btnCosechar').addEventListener('click', () => {
+          if (!consumirAccion()) return;
+          if (cultivoEstado === 'Regado' && diasRestantes <= 0) {
+            cultivoEstado = 'Cosechado';
+            inventario[cultivoSeleccionado] = (inventario[cultivoSeleccionado] || 0) + 1;
+            seedsInventory[cultivoSeleccionado] = (seedsInventory[cultivoSeleccionado] || 0) + 1; // Gain seed from harvest
+            updateInventario();
+            updateCultivo();
+            decisionesDia.push({
+              accion: 'Harvest',
+              detalle: `Harvested ${cultivos[cultivoSeleccionado].nombre}`,
+              impacto: `Points: +${cultivos[cultivoSeleccionado].puntos}, Sustainability: +2 (sustainable harvest)`
+            });
+            puntuacion += Math.floor(cultivos[cultivoSeleccionado].puntos * bonusPuntuacion);
+            puntuacionSostenibilidad.biodiversidad += 2;
+            updatePuntuacion();
+            updateSostenibilidad();
+            checkMisiones('cosechar');
+            alert(`¡Cosecha exitosa de ${cultivos[cultivoSeleccionado].nombre}! Agregado al inventario y semillas.`);
+          } else {
+            accionesDiarias--; // Revertir acción
+            updateAcciones();
+            alert('El cultivo no está listo para cosechar. Espera a que crezca completamente.');
+          }
+        });
+
+        document.getElementById('btnPasarDia').addEventListener('click', () => {
+          // Mostrar reporte nocturno antes de pasar el día
+          mostrarReporteNocturno(() => {
+            nextDay();
+          });
+        });
+
+        // Botón guardar
+        document.getElementById('btnSaveGame').addEventListener('click', () => {
+          document.getElementById('modalGuardar').classList.remove('hidden');
+        });
+
+        document.getElementById('btnConfirmarGuardar').addEventListener('click', () => {
+          const slotName = document.getElementById('saveSlotName').value;
+          guardarPartida(slotName);
+          document.getElementById('modalGuardar').classList.add('hidden');
+        });
+
+        document.getElementById('btnCancelarGuardar').addEventListener('click', () => {
+          document.getElementById('modalGuardar').classList.add('hidden');
+        });
+
+        // Botón exportar
+        document.getElementById('btnExportar').addEventListener('click', () => {
+          exportarDatos();
+        });
+
+        // Botón salir
+        document.getElementById('btnVolver').addEventListener('click', () => {
+          window.location.assign('index.html');
+        });
+
+        // Clima con API (Open-Meteo gratuita)
+        document.getElementById('btnClima').addEventListener('click', async () => {
+          const btn = document.getElementById('btnClima');
+          const originalText = btn.innerHTML;
+          btn.innerHTML = '⏳ Cargando...';
+          btn.disabled = true;
+          try {
+            const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=19.43&longitude=-99.13&current_weather=true');
+            const data = await res.json();
+            const temp = data.current_weather.temperature;
+            document.getElementById('weather').textContent = temp + ' °C';
+            getNDVI();
+            alert(`Clima actualizado: ${temp} °C`);
+          } catch (error) {
+            alert('Error al consultar el clima. Intenta de nuevo.');
+          }
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        });
+
+        // Simulación simple de análisis
+        document.getElementById('btnAnalizar').addEventListener('click', () => {
+          getNDVI();
+          const ndvi = parseFloat(document.getElementById('ndvi').textContent);
+          const result = ndvi > 0.6 ? "✅ Rendimiento Óptimo" : ndvi > 0.3 ? "⚠️ Moderado" : "❌ Riesgo de sequía";
+          checkMisiones('analizar');
+          alert(`Análisis completado: ${result}`);
+        });
+
+        // Tienda
+        document.getElementById('btnTienda').addEventListener('click', () => {
+          document.getElementById('modalTienda').classList.remove('hidden');
+        });
+
+        document.getElementById('btnCerrarTienda').addEventListener('click', () => {
+          document.getElementById('modalTienda').classList.add('hidden');
+        });
+
+        document.getElementById('btnCerrarTutorial').addEventListener('click', () => {
+          document.getElementById('modalTutorial').classList.add('hidden');
+          localStorage.setItem('tutorialShown', 'true');
+        });
+
+        document.getElementById('btnManual').addEventListener('click', () => {
+          document.getElementById('modalManual').classList.remove('hidden');
+        });
+
+        document.getElementById('btnCerrarManual').addEventListener('click', () => {
+          document.getElementById('modalManual').classList.add('hidden');
+        });
+
+        document.getElementById('btnNASAInfo').addEventListener('click', () => {
+          document.getElementById('modalNASA').classList.remove('hidden');
+        });
+
+        document.getElementById('btnComprarEnergia').addEventListener('click', () => comprarUpgrade('energiaExtra', 200));
+        document.getElementById('btnComprarPuntos').addEventListener('click', () => comprarUpgrade('bonusPuntos', 300));
+        document.getElementById('btnComprarAgua').addEventListener('click', () => comprarUpgrade('aguaExtra', 150));
+        document.getElementById('btnComprarCrecimiento').addEventListener('click', () => comprarUpgrade('crecimientoRapido', 250));
+
+        function closeNASA() {
+          document.getElementById('modalNASA').classList.add('hidden');
+        }
+
+        document.getElementById('btnVenderTodo').addEventListener('click', () => {
+          let totalPuntos = 0;
+          for (const [tipo, cantidad] of Object.entries(inventario)) {
+            totalPuntos += cultivos[tipo].puntos * cantidad * 0.5; // 50% del valor
+            inventario[tipo] = 0;
+          }
+          puntuacion += Math.floor(totalPuntos);
+          updatePuntuacion();
+          updateInventario();
+          alert(`¡Vendido! +${Math.floor(totalPuntos)} puntos`);
+        });
+
+      } else {
+        window.location.href = 'personaje.html';
+      }
+    });
+  </script>
+</body>
+</html>

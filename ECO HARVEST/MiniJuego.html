@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco Harvest - Canada Exploration</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: black;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+        #backButton {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <button id="backButton">Back to Farm</button>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Determine region from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const region = urlParams.get('region') || 'USA'; // Default to USA
+
+        // Set crops based on region
+        let crops;
+        if (region === 'Canada') {
+            crops = [
+                { crop: 'strawberry', weight: 0.5 },
+                { crop: 'carrot', weight: 0.3 },
+                { crop: 'potato', weight: 0.2 }
+            ];
+        } else if (region === 'USA') {
+            crops = [
+                { crop: 'cherry', weight: 0.4 },
+                { crop: 'strawberry', weight: 0.3 },
+                { crop: 'cucumber', weight: 0.2 },
+                { crop: 'potato', weight: 0.1 } // rarest
+            ];
+        } else if (region === 'Mexico') {
+            crops = [
+                { crop: 'carrot', weight: 0.4 },
+                { crop: 'onion', weight: 0.3 },
+                { crop: 'cucumber', weight: 0.3 }
+            ];
+        } else if (region === 'SouthAmerica') {
+            crops = [
+                { crop: 'avocado', weight: 0.25 },
+                { crop: 'orange', weight: 0.25 },
+                { crop: 'tomato', weight: 0.25 },
+                { crop: 'strawberry', weight: 0.25 }
+            ];
+        } else { // Africa
+            crops = [
+                { crop: 'tomato', weight: 0.33 },
+                { crop: 'onion', weight: 0.33 },
+                { crop: 'orange', weight: 0.34 }
+            ];
+        }
+
+        // Load images based on region
+        const backgrounds = [
+            new Image(),
+            new Image(),
+            new Image()
+        ];
+        if (region === 'Canada') {
+            backgrounds[0].src = '../Images for game/Backgrounds/frio/Frio background 1.jpg';
+            backgrounds[1].src = '../Images for game/Backgrounds/frio/Frio background 2.jpg';
+            backgrounds[2].src = '../Images for game/Backgrounds/frio/Frio background 3.jpg';
+        } else if (region === 'USA') {
+            backgrounds[0].src = '../Images for game/Backgrounds/Templado/Templado 1.jpg';
+            backgrounds[1].src = '../Images for game/Backgrounds/Templado/Templado 2.jpg';
+            backgrounds[2].src = '../Images for game/Backgrounds/Templado/Templado 3.jpg';
+        } else if (region === 'Mexico') {
+            backgrounds[0].src = '../Images for game/Backgrounds/Estepa/Estepa 1.jpg';
+            backgrounds[1].src = '../Images for game/Backgrounds/Estepa/Estepa 2.jpg';
+            backgrounds[2].src = '../Images for game/Backgrounds/Estepa/Estepa 3.jpg';
+        } else if (region === 'SouthAmerica') {
+            backgrounds[0].src = '../Images for game/Backgrounds/Tropical/Tropical 1.jpg';
+            backgrounds[1].src = '../Images for game/Backgrounds/Tropical/Tropical 2.jpg';
+            backgrounds[2].src = '../Images for game/Backgrounds/Tropical/Tropical 3.jpg';
+        } else { // Africa
+            backgrounds[0].src = '../Images for game/Backgrounds/Arido/Arido 1.jpg';
+            backgrounds[1].src = '../Images for game/Backgrounds/Arido/Arido 2.jpg';
+            backgrounds[2].src = '../Images for game/Backgrounds/Arido/Arido 3.jpg';
+        }
+    
+        let currentBg = 0;
+
+        // Generate collectible items per scene
+        const sceneItems = [[], [], []];
+        for (let bg = 0; bg < 3; bg++) {
+          const numItems = (region === 'Mexico' || region === 'SouthAmerica' || region === 'Africa') ? Math.floor(Math.random() * 2) + 4 : Math.floor(Math.random() * 4) + 2; // Mexico, SouthAmerica, Africa: 4-5, others: 2-5
+          for (let i = 0; i < numItems; i++) {
+            let totalWeight = crops.reduce((sum, c) => sum + c.weight, 0);
+            let rand = Math.random() * totalWeight;
+            let selected = crops[0];
+            for (const c of crops) {
+              rand -= c.weight;
+              if (rand <= 0) {
+                selected = c;
+                break;
+              }
+            }
+            const x = Math.random() * (canvas.width - 100) + 50;
+            const y = 675;
+            sceneItems[bg].push({ x, y, crop: selected.crop });
+          }
+        }
+
+        // Load collected items and seeds
+        let collectedItems = JSON.parse(localStorage.getItem('collectedItems')) || {};
+        let seedsInventory = JSON.parse(localStorage.getItem('seedsInventory')) || {};
+
+        const astronaut = new Image();
+        astronaut.src = '../Images for game/Astruanot for game.png';
+
+        // Load crop images for collectibles
+        const cropImages = {};
+        crops.forEach(c => {
+            cropImages[c.crop] = new Image();
+            const ext = (c.crop === 'carrot' || c.crop === 'tomato' || c.crop === 'orange' || c.crop === 'cherry') ? 'webp' : 'png';
+            cropImages[c.crop].src = `../Images for game/Crops/${c.crop.charAt(0).toUpperCase() + c.crop.slice(1)}.${ext}`;
+        });
+
+        // Astronaut position and speed
+        let astronautX = canvas.width / 2;
+        let astronautY = canvas.height - 120; // Start on ground
+        let astronautVX = 0;
+        let astronautVY = 0;
+        const speed = 5;
+        const gravity = 0.5;
+        const jumpStrength = -12;
+        let onGround = true;
+        const groundY = canvas.height - 120;
+
+        // Keys pressed
+        const keys = {};
+
+        // Handle key events
+        window.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        // Game loop
+        function gameLoop() {
+            // Handle input
+            if (keys['a']) astronautVX = -speed;
+            else if (keys['d']) astronautVX = speed;
+            else astronautVX = 0;
+
+            if (keys['w'] && onGround) {
+                astronautVY = jumpStrength;
+                onGround = false;
+            }
+
+            // Apply gravity
+            astronautVY += gravity;
+
+            // Update position
+            astronautX += astronautVX;
+            astronautY += astronautVY;
+
+            // Ground collision
+            if (astronautY >= groundY) {
+                astronautY = groundY;
+                astronautVY = 0;
+                onGround = true;
+            }
+
+            // Check for item collection
+            sceneItems[currentBg].forEach((item, index) => {
+                if (!collectedItems[`${currentBg}-${index}`]) {
+                    const distX = Math.abs(astronautX - item.x);
+                    if (distX < 100) {
+                        // Collect
+                        seedsInventory[item.crop] = (seedsInventory[item.crop] || 0) + 1;
+                        localStorage.setItem('seedsInventory', JSON.stringify(seedsInventory));
+                        collectedItems[`${currentBg}-${index}`] = true;
+                        localStorage.setItem('collectedItems', JSON.stringify(collectedItems));
+                        console.log(`Collected ${item.crop} seed!`);
+                    }
+                }
+            });
+
+            // Background switching on horizontal edges
+            if (astronautX < 0) {
+                currentBg = (currentBg - 1 + backgrounds.length) % backgrounds.length;
+                console.log('Switched to bg', currentBg);
+                astronautX = canvas.width - 100;
+            }
+            if (astronautX > canvas.width - 100) {
+                currentBg = (currentBg + 1) % backgrounds.length;
+                console.log('Switched to bg', currentBg);
+                astronautX = 0;
+            }
+
+            // Draw
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Default background if image not loaded
+            ctx.fillStyle = '#87CEEB'; // Sky blue
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Draw background if loaded
+            if (backgrounds[currentBg].complete && backgrounds[currentBg].naturalHeight !== 0) {
+                ctx.drawImage(backgrounds[currentBg], 0, 0, canvas.width, canvas.height);
+            }
+            // Draw collectible items
+            sceneItems[currentBg].forEach((item, index) => {
+                if (!collectedItems[`${currentBg}-${index}`]) {
+                    const img = cropImages[item.crop];
+                    if (img && img.complete && img.naturalHeight !== 0) {
+                        ctx.drawImage(img, item.x - 24, item.y - 24, 48, 48);
+                    } else {
+                        // Fallback emoji
+                        ctx.font = '30px Arial';
+                        ctx.fillStyle = 'white';
+                        let emoji = '🌱';
+                        if (item.crop === 'potato') emoji = '🥔';
+                        else if (item.crop === 'carrot') emoji = '🥕';
+                        else if (item.crop === 'strawberry') emoji = '🍓';
+                        else if (item.crop === 'cherry') emoji = '🍒';
+                        else if (item.crop === 'cucumber') emoji = '🥒';
+                        else if (item.crop === 'onion') emoji = '🧅';
+                        else if (item.crop === 'avocado') emoji = '🥑';
+                        else if (item.crop === 'orange') emoji = '🍊';
+                        else if (item.crop === 'tomato') emoji = '🍅';
+                        ctx.fillText(emoji, item.x, item.y);
+                    }
+                }
+            });
+            // Draw astronaut if loaded
+            if (astronaut.complete && astronaut.naturalHeight !== 0) {
+                ctx.drawImage(astronaut, astronautX, astronautY, 100, 100);
+            } else {
+                // Draw placeholder astronaut
+                ctx.fillStyle = 'white';
+                ctx.fillRect(astronautX, astronautY, 100, 100);
+                ctx.fillStyle = 'black';
+                ctx.font = '20px Arial';
+                ctx.fillText('Astronaut', astronautX + 10, astronautY + 50);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start game when images loaded
+        let imagesLoaded = 0;
+        const totalImages = 4; // 3 backgrounds + 1 astronaut
+    
+        backgrounds.forEach(bg => {
+            bg.onload = () => {
+                imagesLoaded++;
+                if (imagesLoaded === totalImages) gameLoop();
+            };
+            bg.onerror = () => {
+                imagesLoaded++;
+                if (imagesLoaded === totalImages) gameLoop();
+            };
+        });
+
+        astronaut.onload = () => {
+            imagesLoaded++;
+            if (imagesLoaded === totalImages) gameLoop();
+        };
+        astronaut.onerror = () => {
+            imagesLoaded++;
+            if (imagesLoaded === totalImages) gameLoop();
+        };
+
+
+        // Back button
+        document.getElementById('backButton').addEventListener('click', () => {
+            // Clear collected items to respawn on next visit
+            localStorage.removeItem('collectedItems');
+            window.location.href = 'juego.html?fromMini=1';
+        });
+    </script>
+</body>
+</html>

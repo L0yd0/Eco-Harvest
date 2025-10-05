@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco Harvest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #020817;
+            color: white;
+            overflow-x: hidden;
+        }
+        
+        .orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        /* Fondo con gradiente suave */
+        .main-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at top, rgba(29, 78, 216, 0.15), transparent 60%),
+                        radial-gradient(ellipse at bottom, rgba(5, 150, 105, 0.15), transparent 60%),
+                        #020817;
+            z-index: 0;
+        }
+        
+        /* Estrellas */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+        
+        /* Efectos de hover */
+        .card {
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .btn-glow {
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-glow:hover {
+            box-shadow: 0 0 50px rgba(16, 185, 129, 0.7);
+            transform: scale(1.05);
+        }
+        
+        /* Gradiente de texto */
+        .text-gradient {
+            background: linear-gradient(135deg, #3b82f6, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .glass {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .float {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Fondo -->
+    <div class="main-bg"></div>
+    <div class="stars" id="stars"></div>
+    
+    <!-- Contenido -->
+    <div style="position: relative; z-index: 10;">
+        <!-- Header -->
+        <header class="glass fixed top-0 left-0 right-0 z-50">
+            <div class="max-w-7xl mx-auto px-6 lg:px-8 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-lg flex items-center justify-center float">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="orbitron text-sm font-bold">ECO HARVEST</div>
+                        <div class="text-xs text-gray-400">Sustainable Farming</div>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button class="px-4 py-2 glass rounded-lg hover:bg-white/10 transition text-sm">Profile</button>
+                    <button class="px-4 py-2 glass rounded-lg hover:bg-white/10 transition text-sm">Settings</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Menu -->
+        <main class="min-h-screen flex items-center justify-center px-6 pt-20">
+            <div class="max-w-4xl mx-auto w-full py-12">
+
+                <!-- Hero -->
+                <div class="text-center mb-16">
+                    <div class="inline-block px-4 py-2 glass rounded-full mb-6">
+                        <span class="text-sm text-emerald-400">🛰️ NASA Space Technology for Agriculture</span>
+                    </div>
+
+                    <h1 class="orbitron text-6xl md:text-8xl font-black mb-6">
+                        <span class="text-gradient">ECO HARVEST</span><br>
+                        <span class="text-white">Sustainable Farming</span>
+                    </h1>
+
+                    <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto mb-8">
+                        Learn sustainable farming using real NASA satellite data and climate information.
+                        Make decisions that impact global food security!
+                    </p>
+                </div>
+
+                <!-- Menu Options -->
+                <div class="grid md:grid-cols-2 gap-8 mb-12">
+                    <div class="glass rounded-2xl p-8 card text-center">
+                        <div class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <span class="text-3xl">🚀</span>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4">Play Game</h3>
+                        <p class="text-gray-400 text-sm mb-6">Start your farming adventure. Create your character and manage a sustainable farm using NASA data.</p>
+                        <button onclick="window.location.href='personaje.html'"
+                        class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl font-bold btn-glow">
+                        Start Playing
+                        </button>
+                    </div>
+
+                    <div class="glass rounded-2xl p-8 card text-center">
+                        <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <span class="text-3xl">📖</span>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4">Tutorial</h3>
+                        <p class="text-gray-400 text-sm mb-6">Learn how to play and understand NASA agricultural technology.</p>
+                        <button onclick="showTutorial()"
+                        class="px-8 py-3 glass rounded-xl font-bold hover:bg-white/10 transition">
+                        View Tutorial
+                        </button>
+                    </div>
+
+                    <div class="glass rounded-2xl p-8 card text-center">
+                        <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <span class="text-3xl">ℹ️</span>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4">About NASA Data</h3>
+                        <p class="text-gray-400 text-sm mb-6">Discover how NASA satellite imagery and climate data help real farmers.</p>
+                        <button onclick="showAbout()"
+                        class="px-8 py-3 glass rounded-xl font-bold hover:bg-white/10 transition">
+                        Learn More
+                        </button>
+                    </div>
+
+                    <div class="glass rounded-2xl p-8 card text-center">
+                        <div class="w-20 h-20 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <span class="text-3xl">📊</span>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4">Load Game</h3>
+                        <p class="text-gray-400 text-sm mb-6">Continue your previous farming session.</p>
+                        <button onclick="loadGame()"
+                        class="px-8 py-3 glass rounded-xl font-bold hover:bg-white/10 transition">
+                        Load Saved Game
+                        </button>
+                    </div>
+                </div>
+
+                <!-- NASA Facts -->
+                <div class="glass rounded-2xl p-6 text-center">
+                    <h3 class="text-xl font-bold mb-4">🌍 NASA Agricultural Technology</h3>
+                    <p class="text-gray-400 text-sm">
+                        This game uses real NASA data including satellite imagery, NDVI vegetation indices, and weather forecasts
+                        to teach sustainable farming practices that can help feed our growing population.
+                    </p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Tutorial Modal -->
+        <div id="tutorialModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+            <div class="glass rounded-2xl p-8 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+                <h3 class="orbitron text-3xl font-bold mb-6 text-center text-gradient">📖 How to Play Eco Harvest</h3>
+                <div class="space-y-4 text-sm">
+                    <div class="glass p-4 rounded-lg">
+                        <h4 class="font-bold mb-2">🎯 Game Objective</h4>
+                        <p>Manage a sustainable farm using NASA satellite data. Plant crops, monitor resources, and make decisions that maintain environmental health while maximizing yields.</p>
+                    </div>
+                    <div class="glass p-4 rounded-lg">
+                        <h4 class="font-bold mb-2">🌱 Key Features</h4>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li><strong>Real NASA Data:</strong> Weather forecasts, NDVI vegetation monitoring, satellite maps</li>
+                            <li><strong>Sustainability Score:</strong> Track environmental impact of your decisions</li>
+                            <li><strong>Daily Missions:</strong> Complete objectives to earn bonus points</li>
+                            <li><strong>Interactive Map:</strong> Explore and analyze different areas</li>
+                        </ul>
+                    </div>
+                    <div class="glass p-4 rounded-lg">
+                        <h4 class="font-bold mb-2">🚀 Getting Started</h4>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Create your character with a unique role (Analyst, Engineer, or Technologist)</li>
+                            <li>Select and plant crops using energy and water resources</li>
+                            <li>Monitor weather and NDVI data to make informed decisions</li>
+                            <li>Advance days to see crop growth and face random events</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="text-center mt-6">
+                    <button onclick="closeTutorial()" class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl font-bold btn-glow">Got it!</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Modal -->
+        <div id="aboutModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+            <div class="glass rounded-2xl p-8 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+                <h3 class="orbitron text-3xl font-bold mb-6 text-center text-gradient">🛰️ About NASA Agricultural Technology</h3>
+                <div class="space-y-4 text-sm">
+                    <div class="glass p-4 rounded-lg">
+                        <h4 class="font-bold mb-2">NASA's Role in Agriculture</h4>
+                        <p>NASA uses satellites to collect data on weather patterns, soil moisture, vegetation health, and climate conditions. This information helps farmers make better decisions about planting, irrigation, and resource management.</p>
+                    </div>
+                    <div class="glass p-4 rounded-lg">
+                        <h4 class="font-bold mb-2">Key Technologies Used</h4>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li><strong>NDVI (Normalized Difference Vegetation Index):</strong> Measures plant health and growth</li>
+                            <li><strong>Satellite Imagery:</strong> High-resolution images of Earth's surface</li>
+                            <li><strong>Weather Forecasting:</strong> Real-time climate data for planning</li>
+                            <li><strong>Soil Moisture Monitoring:</strong> Tracks water availability in soil</li>
+                        </ul>
+                    </div>
+                    <div class="glass p-4 rounded-lg">
+                        <h4 class="font-bold mb-2">Real-World Applications</h4>
+                        <p>This game demonstrates how space technology can revolutionize farming, helping to increase food production while protecting the environment. NASA data helps prevent crop failures, optimize water use, and promote sustainable agriculture worldwide.</p>
+                    </div>
+                </div>
+                <div class="text-center mt-6">
+                    <button onclick="closeAbout()" class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl font-bold btn-glow">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="glass border-t border-white/10 py-6 text-center text-sm text-gray-400">
+            <p>© 2025 Eco Harvest • Sustainable Farming Game</p>
+        </footer>
+    </div>
+
+    <script>
+        // Crear estrellas
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 150; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() * 2 + 1;
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            starsContainer.appendChild(star);
+        }
+
+        // Menu functions
+        function showTutorial() {
+            document.getElementById('tutorialModal').classList.remove('hidden');
+        }
+
+        function closeTutorial() {
+            document.getElementById('tutorialModal').classList.add('hidden');
+        }
+
+        function showAbout() {
+            document.getElementById('aboutModal').classList.remove('hidden');
+        }
+
+        function closeAbout() {
+            document.getElementById('aboutModal').classList.add('hidden');
+        }
+
+        function loadGame() {
+            // Check if there's a saved game
+            const savedGame = localStorage.getItem('gameState');
+            if (savedGame) {
+                window.location.href = 'juego.html';
+            } else {
+                alert('No saved game found. Start a new game first!');
+            }
+        }
+    </script>
+</body>
+</html>
